@@ -98,23 +98,23 @@
   "salary": {
     "name": "근로소득세 + 4대보험",
     "law": "소득세법, 국민연금법, 국민건강보험법, 고용보험법",
-    "effectiveYear": 2024,
+    "effectiveYear": 2026,
     "insurance": {
       "nationalPension": {
-        "law": "국민연금법",
-        "rate": 4.5,
-        "rateFraction": [45, 1000],
+        "law": "국민연금법 (2026년 개정)",
+        "rate": 4.75,
+        "rateFraction": [475, 10000],
         "monthlyCapBase": 6170000
       },
       "healthInsurance": {
-        "law": "국민건강보험법",
-        "rate": 3.545,
-        "rateFraction": [3545, 100000]
+        "law": "국민건강보험법 (2026년)",
+        "rate": 3.595,
+        "rateFraction": [3595, 100000]
       },
       "longTermCare": {
-        "law": "노인장기요양보험법",
-        "rateOfHealth": 12.95,
-        "rateFraction": [1295, 10000]
+        "law": "노인장기요양보험법 (2026년)",
+        "rateOfHealth": 13.14,
+        "rateFraction": [1314, 10000]
       },
       "employmentInsurance": {
         "law": "고용보험법",

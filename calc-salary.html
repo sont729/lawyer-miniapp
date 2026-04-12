@@ -115,10 +115,11 @@ function calcSalary() {
   }
 
   var personalDeductAmt = getConfig('incomeTax.personalDeductionPerPerson', 1500000);
-  var stdTaxCredit = getConfig('incomeTax.standardTaxCredit', 70000);
-  var annualTaxBase = Math.max(0, annualTaxable - earnedDeduct - personalDeductAmt - stdTaxCredit);
+  var annualTaxBase = Math.max(0, annualTaxable - earnedDeduct - personalDeductAmt);
   var r = applyIncomeTax(annualTaxBase);
-  var monthlyIncomeTax = Math.floor(r.tax / 12);
+  var stdTaxCredit = getConfig('incomeTax.standardTaxCredit', 70000);
+  var annualTaxAfterCredit = Math.max(0, r.tax - stdTaxCredit);
+  var monthlyIncomeTax = Math.floor(annualTaxAfterCredit / 12);
   var monthlyLocalTax = Math.floor(monthlyIncomeTax * 10 / 100);
   var totalDeductions = totalInsurance + monthlyIncomeTax + monthlyLocalTax;
   var takeHome = monthly - totalDeductions;

@@ -110,7 +110,7 @@ function calcCRET() {
   var rows = [
     resultRow('공시가격 합계', fmtWon(assessed) + '원'),
     resultRow('공정시장가액비율', fairRatio + '%'),
-    resultRow('공정시장가액', fmtWon(adjustedValue) + '원'),
+    resultRow('공정시장가액', fmtWon(taxable) + '원'),
     resultRow('기본공제', fmtWon(baseDeduct) + '원 (' + baseLabel + ')'),
     resultRow('과세표준', fmtWon(taxable) + '원'),
     resultRow('세율', (rate / 100).toFixed(1) + '%'),
@@ -130,7 +130,7 @@ function calcCRET() {
     + '공시가격: ' + fmtWon(assessed) + '원\n'
     + '주택 유형: ' + (houseType === '1house' ? '1세대 1주택' : '다주택/법인') + '\n'
     + '공정시장가액비율: ' + fairRatio + '%\n'
-    + '공정시장가액: ' + fmtWon(adjustedValue) + '원\n'
+    + '공정시장가액: ' + fmtWon(taxable) + '원\n'
     + '기본공제: ' + fmtWon(baseDeduct) + '원\n'
     + '과세표준: ' + fmtWon(taxable) + '원\n'
     + '세율: ' + (rate / 100).toFixed(1) + '% (누진공제 ' + fmtWon(progDeduct) + '원)\n'

@@ -86,13 +86,13 @@ function calcIncome() {
     + '━━━━━━━━━━━━━━\n'
     + '종합소득금액: ' + fmtWon(totalIncome) + '원\n'
     + '인적공제 (' + persons + '명): ' + fmtWon(personalDeduct) + '원\n'
-    + '표준공제: ' + fmtWon(standardDeduct) + '원\n'
     + '소득공제 합계: ' + fmtWon(totalDeduct) + '원\n'
     + '과세표준: ' + fmtWon(taxable) + '원\n'
     + '세율: ' + r.rate + '% (누진공제 ' + fmtWon(r.deduct) + '원)\n'
     + '산출세액: ' + fmtWon(r.tax) + '원\n'
+    + '표준세액공제: -' + fmtWon(standardTaxCredit) + '원\n'
     + '지방소득세: ' + fmtWon(localTax) + '원\n'
-    + '총 세금: ' + fmtWon(r.tax + localTax) + '원\n'
+    + '총 세금: ' + fmtWon(taxAfterCredit + localTax) + '원\n'
     + '━━━━━━━━━━━━━━\n'
     + '절세/공제 더 받을 수 있는 방법 알려주세요.';
 
