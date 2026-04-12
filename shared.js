@@ -58,15 +58,16 @@ function dateDiffYears(d1, d2) {
 }
 
 /* ---------- Tax Bracket Functions ---------- */
+// 2024년 귀속 기준 종합소득세율 (2023년 세법 개정 반영)
 var INCOME_BRACKETS = [
-  { limit: 12000000,    rate: 6,  deduct: 0 },
-  { limit: 46000000,    rate: 15, deduct: 1080000 },
-  { limit: 88000000,    rate: 24, deduct: 5220000 },
-  { limit: 150000000,   rate: 35, deduct: 14900000 },
-  { limit: 300000000,   rate: 38, deduct: 19400000 },
-  { limit: 500000000,   rate: 40, deduct: 25400000 },
-  { limit: 1000000000,  rate: 42, deduct: 35400000 },
-  { limit: Infinity,    rate: 45, deduct: 65400000 }
+  { limit: 14000000,    rate: 6,  deduct: 0 },
+  { limit: 50000000,    rate: 15, deduct: 1260000 },
+  { limit: 88000000,    rate: 24, deduct: 5760000 },
+  { limit: 150000000,   rate: 35, deduct: 15440000 },
+  { limit: 300000000,   rate: 38, deduct: 19940000 },
+  { limit: 500000000,   rate: 40, deduct: 25940000 },
+  { limit: 1000000000,  rate: 42, deduct: 35940000 },
+  { limit: Infinity,    rate: 45, deduct: 65940000 }
 ];
 
 function applyIncomeTax(taxable) {

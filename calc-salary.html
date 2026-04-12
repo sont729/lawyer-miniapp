@@ -68,10 +68,10 @@ function calcSalary() {
   var annual = salaryMode === 'annual' ? rawAmount : monthly * 12;
 
   // 4대 보험 (employee share)
-  var pensionBase = Math.min(monthly, 5900000);
+  var pensionBase = Math.min(monthly, 6170000); // 2024.7~ 상한액
   var pension = Math.floor(pensionBase * 45 / 1000); // 4.5%
   var health = Math.floor(monthly * 3545 / 100000); // 3.545%
-  var longCare = Math.floor(health * 1281 / 10000); // 12.81% of health
+  var longCare = Math.floor(health * 1295 / 10000); // 12.95% of health (2024~)
   var employ = Math.floor(monthly * 9 / 1000); // 0.9%
   var totalInsurance = pension + health + longCare + employ;
 
