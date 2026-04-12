@@ -157,7 +157,7 @@ function resultRow(label, value, cls) {
 }
 
 function resultBox(rows, disclaimerText, lawRef) {
-  var disc = disclaimerText || '* 실제 세액은 추가 공제/감면에 따라 달라질 수 있습니다. 정확한 세액은 세무사 상담을 권장합니다.';
+  var disc = disclaimerText || '* 본 계산기는 일반적인 경우를 기준으로 한 추정치입니다. 세대생략 증여(할증 30%), 분양권/비사업용 토지 양도, 신용카드 발행세액공제, 고급주택 중과 등 특수 케이스는 반영되지 않습니다. 정확한 세액은 세무사 상담을 권장합니다.';
   var ref = lawRef ? '<p class="law-ref">' + lawRef + '</p>' : '';
   return '<div class="result-box">' + rows.join('') +
     '<p class="disclaimer">' + disc + '</p>' + ref + '</div>';
