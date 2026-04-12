@@ -141,29 +141,36 @@ function doConsult() {
   if (tg) {
     tg.sendData(JSON.stringify({type: 'consult', text: message}));
   } else {
-    // 브라우저에서 열었을 때 — 클립보드 복사 후 안내
-    try {
-      navigator.clipboard.writeText(message);
-      alert('📋 상담 내용이 클립보드에 복사되었습니다!\n텔레그램 봇 채팅에 붙여넣기 하세요.');
-    } catch(e) {
+    // 브라우저 — prompt 창으로 확실하게 보여주기
+    var w = window.open('', '_blank', 'width=400,height=500');
+    if (w) {
+      w.document.write('<html><head><meta charset="utf-8"><title>상담 내용</title></head><body style="font-family:sans-serif;padding:20px;white-space:pre-wrap;font-size:14px;line-height:1.6">'
+        + '<h3 style="margin-bottom:12px">📋 아래 내용을 텔레그램 봇에 붙여넣기 하세요</h3>'
+        + '<textarea style="width:100%;height:300px;font-size:13px;padding:10px;border:1px solid #ddd;border-radius:8px" onclick="this.select()">' + message.replace(/</g,'&lt;') + '</textarea>'
+        + '<p style="color:#999;font-size:12px;margin-top:8px">텍스트를 클릭하면 전체 선택됩니다</p>'
+        + '</body></html>');
+    } else {
       prompt('아래 내용을 복사해서 텔레그램 봇에 붙여넣기 하세요:', message);
     }
   }
 }
 
-/* ---------- FAQ → Chat ---------- */
 function goConsult(question) {
   if (tg) {
     tg.sendData(JSON.stringify({type: 'consult', text: question}));
   } else {
-    try {
-      navigator.clipboard.writeText(question);
-      alert('📋 질문이 복사되었습니다!\n텔레그램 봇 채팅에 붙여넣기 하세요.');
-    } catch(e) {
-      prompt('아래 내용을 복사해서 텔레그램 봇에 붙여넣기 하세요:', question);
+    var w = window.open('', '_blank', 'width=400,height=300');
+    if (w) {
+      w.document.write('<html><head><meta charset="utf-8"><title>상담 질문</title></head><body style="font-family:sans-serif;padding:20px">'
+        + '<h3>📋 아래 질문을 텔레그램 봇에 붙여넣기 하세요</h3>'
+        + '<textarea style="width:100%;height:100px;font-size:14px;padding:10px;border:1px solid #ddd;border-radius:8px" onclick="this.select()">' + question + '</textarea>'
+        + '</body></html>');
+    } else {
+      prompt('아래 내용을 복사하세요:', question);
     }
   }
 }
+
 
 /* ---------- Navigation ---------- */
 function goBack() {
@@ -178,15 +185,6 @@ function goChat() {
   }
 }
 
-function goConsult(question) {
-  if (tg) {
-    try { tg.switchInlineQuery(question, ['users']); } catch(e) {
-      window.location.href = 'consult.html';
-    }
-  } else {
-    window.location.href = 'consult.html';
-  }
-}
 
 function requestDoc(docName) {
   if (tg) {
