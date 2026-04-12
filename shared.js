@@ -156,8 +156,11 @@ function sendToChat(message) {
   }
 }
 
-function consultButton(message) {
+var _consultCode = '';
+
+function consultButton(message, startCode) {
   _consultMsg = message;
+  _consultCode = startCode || '';
   return '<div class="consult-area">'
     + '<input type="text" id="consult-input" class="consult-input" placeholder="추가로 궁금한 점을 적어주세요 (선택)" />'
     + '<button class="btn-consult" onclick="doConsult()">💬 이 내용으로 상담하기</button>'
@@ -167,11 +170,17 @@ function consultButton(message) {
 function doConsult() {
   var message = _consultMsg;
   if (!message) { alert('먼저 계산을 실행해주세요.'); return; }
-  var userQ = document.getElementById('consult-input');
-  if (userQ && userQ.value.trim()) {
-    message += '\n\n추가 질문: ' + userQ.value.trim();
+  if (tg && _consultCode) {
+    // 텔레그램: 파라미터 코드로 봇에 직접 전송
+    tg.openTelegramLink('https://t.me/' + BOT_USERNAME + '?start=' + _consultCode);
+    setTimeout(function() { try { tg.close(); } catch(e) {} }, 500);
+  } else {
+    var userQ = document.getElementById('consult-input');
+    if (userQ && userQ.value.trim()) {
+      message += '\n\n추가 질문: ' + userQ.value.trim();
+    }
+    sendToChat(message);
   }
-  sendToChat(message);
 }
 
 var FAQ_CODES = {

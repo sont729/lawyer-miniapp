@@ -134,6 +134,9 @@ function calcAcquire() {
     ' 적용. 취득일로부터 60일 이내 신고 및 납부해야 합니다. ' +
     '농어촌특별세와 지방교육세가 부가되어 실제 부담액은 취득세보다 높습니다.';
 
+  var typeCode = propType === 'house' ? 'h' : propType === 'land' ? 'l' : 'c';
+  var houseCount = propType === 'house' ? document.getElementById('acq-count').value : '0';
+  var startCode = 'ca_' + price + '_' + typeCode + '_' + houseCount;
   var consultMsg = '취득세 계산 결과로 상담 요청합니다.\n'
     + '━━━━━━━━━━━━━━\n'
     + '취득가액: ' + fmtWon(price) + '원\n'
@@ -148,7 +151,7 @@ function calcAcquire() {
     + '감면 가능한지 알려주세요.';
 
   document.getElementById('acq-result').innerHTML =
-    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg);
+    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg, startCode);
 }
 </script>
 </body>

@@ -97,6 +97,7 @@ function calcInherit() {
     '기본공제(' + fmtWon(basicDeduct) + '원)와 자녀공제(' + fmtWon(childDeduct) + '원)의 합이 일괄공제(' + fmtWon(lumpSum) + '원)보다 ' +
     (itemizedTotal >= lumpSum ? '크므로 항목별 공제가' : '작으므로 일괄공제가') + ' 적용되었습니다.';
 
+  var startCode = 'ci_' + estate + '_' + (document.getElementById('inh-spouse').checked?1:0) + '_' + numCh;
   var consultMsg = '상속세 계산 결과로 상담 요청합니다.\n'
     + '━━━━━━━━━━━━━━\n'
     + '상속재산: ' + fmtWon(estate) + '원\n'
@@ -114,7 +115,7 @@ function calcInherit() {
     + '절세 방법이나 추가 공제가 가능한지 알려주세요.';
 
   document.getElementById('inh-result').innerHTML =
-    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg);
+    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg, startCode);
 }
 </script>
 </body>

@@ -82,6 +82,7 @@ function calcGift() {
     '증여일이 속하는 달의 말일부터 3개월 이내 신고하면 신고세액공제(3%)를 받을 수 있습니다. ' +
     '동일인에게 10년간 받은 증여를 합산하므로, 이전 증여가 있다면 실제 세액이 달라질 수 있습니다.';
 
+  var startCode = 'cg_' + amount + '_' + rel;
   var consultMsg = '증여세 계산 결과로 상담 요청합니다.\n'
     + '━━━━━━━━━━━━━━\n'
     + '증여금액: ' + fmtWon(amount) + '원\n'
@@ -94,7 +95,7 @@ function calcGift() {
     + '절세 방법이나 추가 공제가 가능한지 알려주세요.';
 
   document.getElementById('gift-result').innerHTML =
-    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg);
+    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg, startCode);
 }
 </script>
 </body>

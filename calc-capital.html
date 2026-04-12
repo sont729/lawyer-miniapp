@@ -102,6 +102,7 @@ function calcCapGains() {
   var gain = tfPrice - acqPrice - expenses;
   var holdYears = dateDiffYears(acqDate, tfDate);
   var holdDays = dateDiffDays(acqDate, tfDate);
+  var startCode = 'cc_' + acqPrice + '_' + tfPrice + '_' + holdYears;
   var explainParts = [];
 
   var rows = [
@@ -125,7 +126,7 @@ function calcCapGains() {
       + '양도소득세: 0원\n'
       + '━━━━━━━━━━━━━━\n'
       + '다른 절세 방법이 있는지 알려주세요.';
-    document.getElementById('cg-result').innerHTML = resultBox(rows) + explanationBox(explainParts.join(' ')) + consultButton(consultMsg);
+    document.getElementById('cg-result').innerHTML = resultBox(rows) + explanationBox(explainParts.join(' ')) + consultButton(consultMsg, startCode);
     return;
   }
 
@@ -148,7 +149,7 @@ function calcCapGains() {
         + '양도소득세: 0원\n'
         + '━━━━━━━━━━━━━━\n'
         + '다른 세금 이슈가 있는지 확인해주세요.';
-      document.getElementById('cg-result').innerHTML = resultBox(rows) + explanationBox(explainParts.join(' ')) + consultButton(consultMsg);
+      document.getElementById('cg-result').innerHTML = resultBox(rows) + explanationBox(explainParts.join(' ')) + consultButton(consultMsg, startCode);
       return;
     }
     var taxableGain = Math.floor(gain * (tfPrice - 1200000000) / tfPrice);
@@ -246,7 +247,7 @@ function calcCapGains() {
     + '비과세/감면 가능한지 알려주세요.';
 
   document.getElementById('cg-result').innerHTML =
-    resultBox(rows) + explanationBox(explainParts.join(' ')) + consultButton(consultMsg);
+    resultBox(rows) + explanationBox(explainParts.join(' ')) + consultButton(consultMsg, startCode);
 }
 </script>
 </body>

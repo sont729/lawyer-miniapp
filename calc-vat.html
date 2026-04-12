@@ -67,6 +67,7 @@ function calcVAT() {
 
   var rows = [];
   var explainText = '';
+  var startCode = 'cv_' + sales + '_' + purchase + '_' + (isSimple?1:0);
   var consultMsg = '';
 
   if (isSimple) {
@@ -134,7 +135,7 @@ function calcVAT() {
   }
 
   document.getElementById('vat-result').innerHTML =
-    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg);
+    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg, startCode);
 }
 </script>
 </body>

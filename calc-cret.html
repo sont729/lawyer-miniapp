@@ -95,6 +95,7 @@ function calcCRET() {
     fmtWon(baseDeduct) + ' 차감. 매년 12월에 부과되며 재산세와 별도로 납부합니다. ' +
     '1세대 1주택자는 고령자 세액공제(60세 이상), 장기보유 세액공제(5년 이상) 추가 적용이 가능합니다.';
 
+  var startCode = 'ce_' + assessed + '_' + (document.getElementById('cret-type').value==='one'?1:0);
   var consultMsg = '종합부동산세 계산 결과로 상담 요청합니다.\n'
     + '━━━━━━━━━━━━━━\n'
     + '공시가격: ' + fmtWon(assessed) + '원\n'
@@ -111,7 +112,7 @@ function calcCRET() {
     + '감면 방법 알려주세요.';
 
   document.getElementById('cret-result').innerHTML =
-    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg);
+    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg, startCode);
 }
 </script>
 </body>

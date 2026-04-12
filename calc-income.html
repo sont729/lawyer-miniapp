@@ -78,6 +78,7 @@ function calcIncome() {
     '인적공제는 본인 포함 ' + persons + '명 x 150만원 = ' + fmtWon(personalDeduct) + '원이 적용되었습니다. ' +
     '실제로는 국민연금, 건강보험, 신용카드 사용액 등 추가 공제를 통해 세액을 줄일 수 있습니다.';
 
+  var startCode = 'ct_' + income + '_' + numPeople;
   var consultMsg = '종합소득세 계산 결과로 상담 요청합니다.\n'
     + '━━━━━━━━━━━━━━\n'
     + '종합소득금액: ' + fmtWon(totalIncome) + '원\n'
@@ -93,7 +94,7 @@ function calcIncome() {
     + '절세/공제 더 받을 수 있는 방법 알려주세요.';
 
   document.getElementById('inc-result').innerHTML =
-    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg);
+    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg, startCode);
 }
 </script>
 </body>
