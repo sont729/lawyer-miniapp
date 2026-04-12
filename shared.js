@@ -187,16 +187,19 @@ function goChat() {
 
 
 function requestDoc(docName) {
+  var message = docName + ' 작성해주세요.';
   if (tg) {
-    try {
-      tg.sendData(JSON.stringify({ action: 'request_document', document: docName }));
-    } catch(e) {
-      try { tg.close(); } catch(e2) {
-        alert(docName + ' 작성을 요청하려면 채팅에서 말씀해주세요.');
-      }
-    }
+    tg.sendData(JSON.stringify({type: 'consult', text: message}));
   } else {
-    alert(docName + ' 작성을 요청하려면 텔레그램 채팅에서 말씀해주세요.');
+    var w = window.open('', '_blank', 'width=400,height=250');
+    if (w) {
+      w.document.write('<html><head><meta charset="utf-8"><title>문서 요청</title></head><body style="font-family:sans-serif;padding:20px">'
+        + '<h3>📋 아래 내용을 텔레그램 봇에 붙여넣기 하세요</h3>'
+        + '<textarea style="width:100%;height:60px;font-size:14px;padding:10px;border:1px solid #ddd;border-radius:8px" onclick="this.select()">' + message + '</textarea>'
+        + '</body></html>');
+    } else {
+      prompt('아래 내용을 복사하세요:', message);
+    }
   }
 }
 
