@@ -151,6 +151,20 @@ function doConsult() {
   }
 }
 
+/* ---------- FAQ → Chat ---------- */
+function goConsult(question) {
+  if (tg) {
+    tg.sendData(JSON.stringify({type: 'consult', text: question}));
+  } else {
+    try {
+      navigator.clipboard.writeText(question);
+      alert('📋 질문이 복사되었습니다!\n텔레그램 봇 채팅에 붙여넣기 하세요.');
+    } catch(e) {
+      prompt('아래 내용을 복사해서 텔레그램 봇에 붙여넣기 하세요:', question);
+    }
+  }
+}
+
 /* ---------- Navigation ---------- */
 function goBack() {
   window.location.href = 'index.html';
