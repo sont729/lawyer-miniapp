@@ -133,7 +133,7 @@ function calcSalary() {
     '4대보험은 사업주도 동일 부담(산재보험은 사업주 전액). ' +
     '국민연금 상한액은 월 590만원이며, 비과세 수당(식대 등)은 소득세 계산에서 제외됩니다.';
 
-  var startCode = 'cs_' + gross + '_' + nontax;
+  var startCode = 'cs_' + monthly + '_' + nonTaxable;
   var consultMsg = '월급 실수령액 계산 결과로 상담 요청합니다.\n'
     + '━━━━━━━━━━━━━━\n'
     + '월 급여: ' + fmtWon(monthly) + '원\n'
