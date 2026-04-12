@@ -123,8 +123,18 @@ function calcLitigation() {
     (isSmall ? '소액사건(3천만원 이하)은 소액사건심판법에 따라 변호사 없이 직접 소송이 가능합니다. 이행권고결정 제도를 활용하면 더 빠르게 진행할 수 있습니다.' :
     '변호사 비용은 소송 난이도, 지역, 변호사 경력에 따라 크게 달라집니다. 대한법률구조공단(132)에서 무료 법률 상담도 가능합니다.');
 
-  var consultMsg = '소송비용 상담: 청구금액 ' + fmtWon(amount) + '원, 1심 최소비용 ' + fmtWon(totalMin) + '원. 소송 절차와 승소 가능성에 대해 알려주세요.';
-  setConsultMsg(consultMsg);
+  var consultMsg = '소송비용 계산 결과로 상담 요청합니다.\n'
+    + '━━━━━━━━━━━━━━\n'
+    + '청구금액: ' + fmtWon(amount) + '원\n'
+    + '당사자 수: ' + parties + '명\n'
+    + '인지대 (1심): ' + fmtWon(stampFee) + '원\n'
+    + '인지대 (항소심): ' + fmtWon(appealStamp) + '원\n'
+    + '인지대 (상고심): ' + fmtWon(cassationStamp) + '원\n'
+    + '송달료: ' + fmtWon(serviceFee) + '원\n'
+    + '변호사 비용 범위: ' + fmtWon(lawyerMin) + ' ~ ' + fmtWon(lawyerMax) + '원\n'
+    + '1심 최소 비용: ' + fmtWon(totalMin) + '원\n'
+    + '━━━━━━━━━━━━━━\n'
+    + '소송 절차와 승소 가능성에 대해 알려주세요.';
 
   document.getElementById('lit-result').innerHTML =
     resultBox(rows, disclaimer) + smallNote + explanationBox(explainText) + consultButton(consultMsg);

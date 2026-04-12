@@ -115,8 +115,16 @@ function calcCapGains() {
   if (gain <= 0) {
     rows.push(resultRow('양도소득세', '0원 (차익 없음)', 'total'));
     explainParts.push('양도차익이 없으므로 양도소득세가 발생하지 않습니다.');
-    var consultMsg = '양도소득세 상담: ' + fmtWon(acqPrice) + '원에 취득하여 ' + fmtWon(tfPrice) + '원에 양도, 차익 없음. 다른 절세 방법이 있는지 알려주세요.';
-  setConsultMsg(consultMsg);
+    var consultMsg = '양도소득세 계산 결과로 상담 요청합니다.\n'
+      + '━━━━━━━━━━━━━━\n'
+      + '취득가액: ' + fmtWon(acqPrice) + '원\n'
+      + '양도가액: ' + fmtWon(tfPrice) + '원\n'
+      + '필요경비: ' + fmtWon(expenses) + '원\n'
+      + '양도차익: ' + fmtWon(gain) + '원 (차익 없음)\n'
+      + '보유기간: ' + holdYears + '년\n'
+      + '양도소득세: 0원\n'
+      + '━━━━━━━━━━━━━━\n'
+      + '다른 절세 방법이 있는지 알려주세요.';
     document.getElementById('cg-result').innerHTML = resultBox(rows) + explanationBox(explainParts.join(' ')) + consultButton(consultMsg);
     return;
   }
@@ -129,8 +137,17 @@ function calcCapGains() {
       rows.push(resultRow('비과세', '1세대 1주택 비과세 (2년 이상 보유, 12억 이하)'));
       rows.push(resultRow('양도소득세', '0원', 'total'));
       explainParts.push('1세대 1주택으로 2년 이상 보유하고, 양도가액이 12억원 이하이므로 비과세입니다.');
-      var consultMsg = '양도소득세 상담: 1세대 1주택 비과세 적용. 다른 세금 이슈가 있는지 확인해주세요.';
-  setConsultMsg(consultMsg);
+      var consultMsg = '양도소득세 계산 결과로 상담 요청합니다.\n'
+        + '━━━━━━━━━━━━━━\n'
+        + '취득가액: ' + fmtWon(acqPrice) + '원\n'
+        + '양도가액: ' + fmtWon(tfPrice) + '원\n'
+        + '필요경비: ' + fmtWon(expenses) + '원\n'
+        + '양도차익: ' + fmtWon(gain) + '원\n'
+        + '보유기간: ' + holdYears + '년\n'
+        + '비과세: 1세대 1주택 (2년 이상 보유, 12억 이하)\n'
+        + '양도소득세: 0원\n'
+        + '━━━━━━━━━━━━━━\n'
+        + '다른 세금 이슈가 있는지 확인해주세요.';
       document.getElementById('cg-result').innerHTML = resultBox(rows) + explanationBox(explainParts.join(' ')) + consultButton(consultMsg);
       return;
     }
@@ -211,8 +228,22 @@ function calcCapGains() {
 
   explainParts.push('양도일이 속하는 달의 말일부터 2개월 이내에 예정신고하고, 다음 해 5월에 확정신고해야 합니다.');
 
-  var consultMsg = '양도소득세 상담: ' + fmtWon(acqPrice) + '원 취득 → ' + fmtWon(tfPrice) + '원 양도, 보유 ' + holdYears + '년, 예상세액 ' + fmtWon(finalTax + localTax) + '원. 비과세/감면 가능한지 알려주세요.';
-  setConsultMsg(consultMsg);
+  var consultMsg = '양도소득세 계산 결과로 상담 요청합니다.\n'
+    + '━━━━━━━━━━━━━━\n'
+    + '취득가액: ' + fmtWon(acqPrice) + '원\n'
+    + '양도가액: ' + fmtWon(tfPrice) + '원\n'
+    + '필요경비: ' + fmtWon(expenses) + '원\n'
+    + '양도차익: ' + fmtWon(gain) + '원\n'
+    + '보유기간: ' + holdYears + '년\n'
+    + (ltRate > 0 ? '장기보유특별공제율: ' + ltRate + '%\n' : '')
+    + (ltRate > 0 ? '장기보유특별공제액: ' + fmtWon(ltDeduction) + '원\n' : '')
+    + '기본공제: ' + fmtWon(basicDeduct) + '원\n'
+    + '과세표준: ' + fmtWon(taxable) + '원\n'
+    + '양도소득세: ' + fmtWon(finalTax) + '원\n'
+    + '지방소득세: ' + fmtWon(localTax) + '원\n'
+    + '총 납부세액: ' + fmtWon(finalTax + localTax) + '원\n'
+    + '━━━━━━━━━━━━━━\n'
+    + '비과세/감면 가능한지 알려주세요.';
 
   document.getElementById('cg-result').innerHTML =
     resultBox(rows) + explanationBox(explainParts.join(' ')) + consultButton(consultMsg);

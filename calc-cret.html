@@ -95,9 +95,20 @@ function calcCRET() {
     fmtWon(baseDeduct) + ' 차감. 매년 12월에 부과되며 재산세와 별도로 납부합니다. ' +
     '1세대 1주택자는 고령자 세액공제(60세 이상), 장기보유 세액공제(5년 이상) 추가 적용이 가능합니다.';
 
-  var consultMsg = '종합부동산세 상담: 공시가격 ' + fmtWon(assessed) + '원, ' +
-  setConsultMsg(consultMsg);
-    (houseType === '1house' ? '1세대 1주택' : '다주택') + ', 예상세액 ' + fmtWon(tax + nongSpec) + '원. 감면 방법 알려주세요.';
+  var consultMsg = '종합부동산세 계산 결과로 상담 요청합니다.\n'
+    + '━━━━━━━━━━━━━━\n'
+    + '공시가격: ' + fmtWon(assessed) + '원\n'
+    + '주택 유형: ' + (houseType === '1house' ? '1세대 1주택' : '다주택/법인') + '\n'
+    + '공정시장가액비율: ' + fairRatio + '%\n'
+    + '공정시장가액: ' + fmtWon(adjustedValue) + '원\n'
+    + '기본공제: ' + fmtWon(baseDeduct) + '원\n'
+    + '과세표준: ' + fmtWon(taxable) + '원\n'
+    + '세율: ' + (rate / 100).toFixed(1) + '% (누진공제 ' + fmtWon(progDeduct) + '원)\n'
+    + '종합부동산세: ' + fmtWon(tax) + '원\n'
+    + '농어촌특별세: ' + fmtWon(nongSpec) + '원\n'
+    + '총 납부액: ' + fmtWon(tax + nongSpec) + '원\n'
+    + '━━━━━━━━━━━━━━\n'
+    + '감면 방법 알려주세요.';
 
   document.getElementById('cret-result').innerHTML =
     resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg);

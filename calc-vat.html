@@ -68,7 +68,6 @@ function calcVAT() {
   var rows = [];
   var explainText = '';
   var consultMsg = '';
-  setConsultMsg(consultMsg);
 
   if (isSimple) {
     var industryRate = parseInt(document.getElementById('vat-industry').value, 10);
@@ -88,7 +87,18 @@ function calcVAT() {
       '%를 적용한 과세표준 ' + fmtWon(taxBase) + '원에 10% 세율을 적용합니다. ' +
       '간이과세자 신고기한: 1월 1일~1월 25일 (전년도분). ' +
       '연 매출 4,800만원 미만이면 납부의무가 면제됩니다.';
-    consultMsg = '부가가치세 상담: 간이과세자, 매출 ' + fmtWon(sales) + '원, 납부세액 ' + fmtWon(finalVat) + '원. 절세 방법 알려주세요.';
+    consultMsg = '부가가치세 계산 결과로 상담 요청합니다.\n'
+      + '━━━━━━━━━━━━━━\n'
+      + '과세 유형: 간이과세자\n'
+      + '매출액: ' + fmtWon(sales) + '원\n'
+      + '매입액: ' + fmtWon(purchase) + '원\n'
+      + '업종별 부가가치율: ' + industryRate + '%\n'
+      + '부가가치 과세표준: ' + fmtWon(taxBase) + '원\n'
+      + '산출세액: ' + fmtWon(vat) + '원\n'
+      + '매입세액 공제: ' + fmtWon(purchaseDeduct) + '원\n'
+      + '납부세액: ' + fmtWon(finalVat) + '원\n'
+      + '━━━━━━━━━━━━━━\n'
+      + '절세 방법 알려주세요.';
   } else {
     var salesSupply = Math.floor(sales * 10 / 11);
     var salesVat = sales - salesSupply;
@@ -109,7 +119,18 @@ function calcVAT() {
     explainText = '일반과세자로 매출세액 ' + fmtWon(salesVat) + '원에서 매입세액 ' + fmtWon(purchaseVat) +
       '원을 공제합니다. 신고기한: 1기(1~6월분) 7월 25일, 2기(7~12월분) 다음해 1월 25일.';
     var amt = netVat >= 0 ? '납부 ' + fmtWon(netVat) : '환급 ' + fmtWon(-netVat);
-    consultMsg = '부가가치세 상담: 일반과세자, 매출 ' + fmtWon(sales) + '원, 매입 ' + fmtWon(purchase) + '원, ' + amt + '원. 절세 방법 알려주세요.';
+    consultMsg = '부가가치세 계산 결과로 상담 요청합니다.\n'
+      + '━━━━━━━━━━━━━━\n'
+      + '과세 유형: 일반과세자\n'
+      + '매출액: ' + fmtWon(sales) + '원\n'
+      + '매입액: ' + fmtWon(purchase) + '원\n'
+      + '매출 공급가액: ' + fmtWon(salesSupply) + '원\n'
+      + '매출세액: ' + fmtWon(salesVat) + '원\n'
+      + '매입 공급가액: ' + fmtWon(purchaseSupply) + '원\n'
+      + '매입세액: ' + fmtWon(purchaseVat) + '원\n'
+      + (netVat >= 0 ? '납부세액: ' + fmtWon(netVat) + '원\n' : '환급세액: ' + fmtWon(-netVat) + '원\n')
+      + '━━━━━━━━━━━━━━\n'
+      + '절세 방법 알려주세요.';
   }
 
   document.getElementById('vat-result').innerHTML =

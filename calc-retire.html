@@ -87,8 +87,21 @@ function calcRetire() {
     '환산급여(퇴직금을 12개월로 환산)에 소득세율을 적용한 후 다시 근속연수로 역산합니다. ' +
     '퇴직금을 IRP(개인형 퇴직연금)로 받으면 퇴직소득세 납부를 연금 수령 시점까지 이연할 수 있습니다.';
 
-  var consultMsg = '퇴직소득세 상담: 퇴직금 ' + fmtWon(severance) + '원, 근속 ' + years + '년, 예상세액 ' + fmtWon(finalTax + localTax) + '원. IRP 이연 등 절세 방법 알려주세요.';
-  setConsultMsg(consultMsg);
+  var consultMsg = '퇴직소득세 계산 결과로 상담 요청합니다.\n'
+    + '━━━━━━━━━━━━━━\n'
+    + '퇴직금: ' + fmtWon(severance) + '원\n'
+    + '근속연수: ' + years + '년\n'
+    + '근속연수 공제: ' + fmtWon(deduction) + '원\n'
+    + '환산급여: ' + fmtWon(converted) + '원\n'
+    + '환산급여 공제: ' + fmtWon(convertedDeduct) + '원\n'
+    + '환산 과세표준: ' + fmtWon(convertedTaxable) + '원\n'
+    + '세율: ' + r.rate + '%\n'
+    + '환산 산출세액: ' + fmtWon(r.tax) + '원\n'
+    + '퇴직소득세: ' + fmtWon(finalTax) + '원\n'
+    + '지방소득세: ' + fmtWon(localTax) + '원\n'
+    + '총 세금: ' + fmtWon(finalTax + localTax) + '원\n'
+    + '━━━━━━━━━━━━━━\n'
+    + 'IRP 이연 등 절세 방법 알려주세요.';
 
   document.getElementById('ret-result').innerHTML =
     resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg);

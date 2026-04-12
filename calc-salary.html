@@ -133,8 +133,21 @@ function calcSalary() {
     '4대보험은 사업주도 동일 부담(산재보험은 사업주 전액). ' +
     '국민연금 상한액은 월 590만원이며, 비과세 수당(식대 등)은 소득세 계산에서 제외됩니다.';
 
-  var consultMsg = '월급 상담: 월 ' + fmtWon(monthly) + '원, 실수령 ' + fmtWon(takeHome) + '원. 절세/공제 더 받을 수 있는 방법 알려주세요.';
-  setConsultMsg(consultMsg);
+  var consultMsg = '월급 실수령액 계산 결과로 상담 요청합니다.\n'
+    + '━━━━━━━━━━━━━━\n'
+    + '월 급여: ' + fmtWon(monthly) + '원\n'
+    + '비과세 수당: ' + fmtWon(nonTaxable) + '원\n'
+    + '국민연금: ' + fmtWon(pension) + '원\n'
+    + '건강보험: ' + fmtWon(health) + '원\n'
+    + '장기요양보험: ' + fmtWon(longCare) + '원\n'
+    + '고용보험: ' + fmtWon(employ) + '원\n'
+    + '4대보험 합계: ' + fmtWon(totalInsurance) + '원\n'
+    + '근로소득세: ' + fmtWon(monthlyIncomeTax) + '원\n'
+    + '지방소득세: ' + fmtWon(monthlyLocalTax) + '원\n'
+    + '총 공제액: ' + fmtWon(totalDeductions) + '원\n'
+    + '실수령액: ' + fmtWon(takeHome) + '원\n'
+    + '━━━━━━━━━━━━━━\n'
+    + '절세/공제 더 받을 수 있는 방법 알려주세요.';
 
   document.getElementById('sal-result').innerHTML =
     resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg);
