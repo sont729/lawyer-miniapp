@@ -131,7 +131,14 @@ function consultAbout(message) {
   if (tg) {
     tg.sendData(JSON.stringify({type: 'consult', text: message}));
   } else {
-    alert('텔레그램에서 열어주세요.\n\n상담 내용: ' + message);
+    // 브라우저에서 열었을 때 — 클립보드 복사 후 안내
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(message).then(function() {
+        alert('상담 내용이 클립보드에 복사되었습니다.\n텔레그램 봇 채팅에 붙여넣기 하세요.\n\n' + message);
+      });
+    } else {
+      prompt('아래 내용을 복사해서 텔레그램 봇에 붙여넣기 하세요:', message);
+    }
   }
 }
 
