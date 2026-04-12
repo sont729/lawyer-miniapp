@@ -124,13 +124,12 @@ function explanationBox(text) {
 
 var _consultMsg = '';
 function consultButton(message) {
+  _consultMsg = message;
   return '<div class="consult-area">'
     + '<input type="text" id="consult-input" class="consult-input" placeholder="추가로 궁금한 점을 적어주세요 (선택)" />'
     + '<button class="btn-consult" onclick="doConsult()">💬 이 내용으로 상담하기</button>'
     + '</div>';
 }
-
-function setConsultMsg(msg) { _consultMsg = msg; }
 
 function doConsult() {
   var message = _consultMsg;
