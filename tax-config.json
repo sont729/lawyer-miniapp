@@ -104,7 +104,7 @@
         "law": "국민연금법 (2026년 개정)",
         "rate": 4.75,
         "rateFraction": [475, 10000],
-        "monthlyCapBase": 6170000
+        "monthlyCapBase": 6370000
       },
       "healthInsurance": {
         "law": "국민건강보험법 (2026년)",

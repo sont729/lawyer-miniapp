@@ -135,16 +135,20 @@ function calcSalary() {
 
   // Insurance section
   rows.push(resultRow('4대보험 공제', '', 'section-title'));
-  rows.push(resultRow('국민연금 (4.5%)', '-' + fmtWon(pension) + '원'));
-  rows.push(resultRow('건강보험 (3.545%)', '-' + fmtWon(health) + '원'));
-  rows.push(resultRow('장기요양보험 (12.81%)', '-' + fmtWon(longCare) + '원'));
-  rows.push(resultRow('고용보험 (0.9%)', '-' + fmtWon(employ) + '원'));
+  var pctPension = cfg ? (cfg.nationalPension.rateFraction[0] / (cfg.nationalPension.rateFraction[1] / 100)).toFixed(2) : '4.75';
+  var pctHealth = cfg ? (cfg.healthInsurance.rateFraction[0] / (cfg.healthInsurance.rateFraction[1] / 100)).toFixed(3) : '3.595';
+  var pctLongCare = cfg ? (cfg.longTermCare.rateFraction[0] / (cfg.longTermCare.rateFraction[1] / 100)).toFixed(2) : '13.14';
+  var pctEmploy = cfg ? (cfg.employmentInsurance.rateFraction[0] / (cfg.employmentInsurance.rateFraction[1] / 100)).toFixed(1) : '0.9';
+  rows.push(resultRow('국민연금 (' + pctPension + '%)', '-' + fmtWon(pension) + '원'));
+  rows.push(resultRow('건강보험 (' + pctHealth + '%)', '-' + fmtWon(health) + '원'));
+  rows.push(resultRow('장기요양보험 (' + pctLongCare + '%)', '-' + fmtWon(longCare) + '원'));
+  rows.push(resultRow('고용보험 (' + pctEmploy + '%)', '-' + fmtWon(employ) + '원'));
   rows.push(resultRow('4대보험 소계', '-' + fmtWon(totalInsurance) + '원'));
   rows.push(resultRow('', ''));
 
   // Tax section
   rows.push(resultRow('세금 공제', '', 'section-title'));
-  rows.push(resultRow('근로소득세 (간이)', '-' + fmtWon(monthlyIncomeTax) + '원'));
+  rows.push(resultRow('근로소득세 (추정)', '-' + fmtWon(monthlyIncomeTax) + '원'));
   rows.push(resultRow('지방소득세 (10%)', '-' + fmtWon(monthlyLocalTax) + '원'));
   rows.push(resultRow('', ''));
 
