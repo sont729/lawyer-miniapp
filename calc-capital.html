@@ -216,12 +216,13 @@ function calcCapGains() {
   rows.push(resultRow('기본공제', fmtWon(basicDeduct) + '원'));
   rows.push(resultRow('과세표준', fmtWon(taxable) + '원'));
 
+  // 단기 보유: 역년 기준 (일수가 아닌 년 단위)
   var finalTax = 0;
-  if (holdDays < 365) {
+  if (holdYears < 1) {
     finalTax = Math.floor(taxable * shortRateUnder1 / 100);
     rows.push(resultRow('단기 보유 세율', shortRateUnder1 + '% (1년 미만)'));
     explainParts.push('1년 미만 보유로 ' + shortRateUnder1 + '% 단기 세율이 적용됩니다 (2021년 개정).');
-  } else if (holdDays < 730) {
+  } else if (holdYears < 2) {
     finalTax = Math.floor(taxable * shortRateUnder2 / 100);
     rows.push(resultRow('단기 보유 세율', shortRateUnder2 + '% (2년 미만)'));
     explainParts.push('2년 미만 보유로 ' + shortRateUnder2 + '% 단기 세율이 적용됩니다 (2021년 개정).');

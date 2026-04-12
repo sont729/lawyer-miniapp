@@ -77,7 +77,10 @@ function calcLitigation() {
       stampFee = Math.floor(amount * 35 / 10000) + 555000;
     }
   }
-  stampFee = Math.floor(stampFee / 1000) * 1000;
+  // 민사소송등인지법: 1,000원 이상이면 100원 미만 절사
+  if (stampFee >= 1000) {
+    stampFee = Math.floor(stampFee / 100) * 100;
+  }
   if (stampFee < 1000) stampFee = 1000;
 
 

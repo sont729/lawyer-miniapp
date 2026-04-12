@@ -124,7 +124,12 @@ function calcAcquire() {
       } else { acqTaxRate = 300; rateLabel = '3% (1주택, 9억 초과)'; }
       nongSpecRate = 20;
     }
-    eduRate = Math.floor(acqTaxRate / 10);
+    // 다주택 중과(8%, 12%) 시 지방교육세 0.4% 고정 (지방세법 특례)
+    if (acqTaxRate >= 800) {
+      eduRate = 40; // 0.4%
+    } else {
+      eduRate = Math.floor(acqTaxRate / 10);
+    }
   }
 
   var acqTax = Math.floor(price * acqTaxRate / 10000);
