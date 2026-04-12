@@ -47,11 +47,12 @@ function calcRetire() {
   if (severance <= 0) { alert('퇴직금을 입력해주세요.'); return; }
   if (isNaN(years) || years <= 0) { alert('근속연수를 입력해주세요.'); return; }
 
+  // 2023년 개정 근속연수공제 (소득세법 제48조)
   var deduction = 0;
-  if (years <= 5) deduction = 300000 * years;
-  else if (years <= 10) deduction = 1500000 + 500000 * (years - 5);
-  else if (years <= 20) deduction = 4000000 + 800000 * (years - 10);
-  else deduction = 12000000 + 1200000 * (years - 20);
+  if (years <= 5) deduction = 1000000 * years;
+  else if (years <= 10) deduction = 5000000 + 2000000 * (years - 5);
+  else if (years <= 20) deduction = 15000000 + 2500000 * (years - 10);
+  else deduction = 40000000 + 3000000 * (years - 20);
 
   var afterDeduct = Math.max(0, severance - deduction);
   var converted = years > 0 ? Math.floor(afterDeduct * 12 / years) : 0;

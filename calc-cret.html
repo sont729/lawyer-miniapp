@@ -51,8 +51,9 @@ function calcCRET() {
 
   var fairRatio = 60;
   var baseDeduct = (houseType === '1house') ? 1200000000 : 900000000;
-  var adjustedValue = Math.floor(assessed * fairRatio / 100);
-  var taxable = Math.max(0, adjustedValue - baseDeduct);
+  // 종부세법: (공시가격 - 기본공제) × 공정시장가액비율
+  var afterDeduct = Math.max(0, assessed - baseDeduct);
+  var taxable = Math.floor(afterDeduct * fairRatio / 100);
 
   var rate = 0, progDeduct = 0;
   if (houseType === '1house') {

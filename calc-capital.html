@@ -133,11 +133,20 @@ function calcCapGains() {
   var is1house = (household === '1household1house');
   var totalTax = 0;
 
-  if (is1house && holdYears >= 2) {
+  // 조정대상지역 거주 요건: 2017.8.3 이후 취득 시 2년 거주 필요
+  var isAdjust = document.getElementById('cg-adjust').checked;
+  var resStart = document.getElementById('cg-res-start').value.trim();
+  var resEnd = document.getElementById('cg-res-end').value.trim();
+  var resYearsForExempt = (resStart && resEnd) ? dateDiffYears(resStart, resEnd) : 0;
+  var needsResidence = isAdjust && acqDate >= '2017-08-03';
+  var meetsResidence = !needsResidence || resYearsForExempt >= 2;
+
+  if (is1house && holdYears >= 2 && meetsResidence) {
     if (tfPrice <= 1200000000) {
-      rows.push(resultRow('비과세', '1세대 1주택 비과세 (2년 이상 보유, 12억 이하)'));
+      var exemptNote = needsResidence ? ' (2년 보유 + 2년 거주, 12억 이하)' : ' (2년 이상 보유, 12억 이하)';
+      rows.push(resultRow('비과세', '1세대 1주택 비과세' + exemptNote));
       rows.push(resultRow('양도소득세', '0원', 'total'));
-      explainParts.push('1세대 1주택으로 2년 이상 보유하고, 양도가액이 12억원 이하이므로 비과세입니다.');
+      explainParts.push('1세대 1주택 비과세 요건을 충족합니다.' + (needsResidence ? ' 조정대상지역 2017.8.3 이후 취득으로 2년 거주 요건도 충족되었습니다.' : ''));
       var consultMsg = '양도소득세 계산 결과로 상담 요청합니다.\n'
         + '━━━━━━━━━━━━━━\n'
         + '취득가액: ' + fmtWon(acqPrice) + '원\n'
@@ -191,13 +200,13 @@ function calcCapGains() {
 
   var finalTax = 0;
   if (holdDays < 365) {
-    finalTax = Math.floor(taxable * 50 / 100);
-    rows.push(resultRow('단기 보유 세율', '50% (1년 미만)'));
-    explainParts.push('1년 미만 보유로 50% 단기 세율이 적용됩니다.');
+    finalTax = Math.floor(taxable * 70 / 100);
+    rows.push(resultRow('단기 보유 세율', '70% (1년 미만)'));
+    explainParts.push('1년 미만 보유로 70% 단기 세율이 적용됩니다 (2021년 개정).');
   } else if (holdDays < 730) {
-    finalTax = Math.floor(taxable * 40 / 100);
-    rows.push(resultRow('단기 보유 세율', '40% (2년 미만)'));
-    explainParts.push('2년 미만 보유로 40% 단기 세율이 적용됩니다.');
+    finalTax = Math.floor(taxable * 60 / 100);
+    rows.push(resultRow('단기 보유 세율', '60% (2년 미만)'));
+    explainParts.push('2년 미만 보유로 60% 단기 세율이 적용됩니다 (2021년 개정).');
   } else {
     var tfDateObj = new Date(tfDate);
     var surchargeExemptEnd = new Date('2026-05-09');

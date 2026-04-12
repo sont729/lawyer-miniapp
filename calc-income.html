@@ -54,23 +54,24 @@ function calcIncome() {
   if (totalIncome <= 0) { alert('종합소득금액을 입력해주세요.'); return; }
 
   var personalDeduct = 1500000 * persons;
-  var standardDeduct = 70000;
-  var totalDeduct = personalDeduct + standardDeduct;
+  var totalDeduct = personalDeduct; // 소득공제
   var taxable = Math.max(0, totalIncome - totalDeduct);
   var r = applyIncomeTax(taxable);
-  var localTax = Math.floor(r.tax * 10 / 100);
+  var standardTaxCredit = 70000; // 표준세액공제 (세액에서 차감)
+  var taxAfterCredit = Math.max(0, r.tax - standardTaxCredit);
+  var localTax = Math.floor(taxAfterCredit * 10 / 100);
 
   var rows = [
     resultRow('종합소득금액', fmtWon(totalIncome) + '원'),
     resultRow('인적공제 (' + persons + '명)', fmtWon(personalDeduct) + '원'),
-    resultRow('표준공제', fmtWon(standardDeduct) + '원'),
-    resultRow('소득공제 합계', fmtWon(totalDeduct) + '원'),
     resultRow('과세표준', fmtWon(taxable) + '원'),
     resultRow('적용 세율', r.rate + '%'),
     resultRow('누진공제', fmtWon(r.deduct) + '원'),
     resultRow('산출세액', fmtWon(r.tax) + '원'),
+    resultRow('표준세액공제', '-' + fmtWon(standardTaxCredit) + '원'),
+    resultRow('세액공제 후', fmtWon(taxAfterCredit) + '원'),
     resultRow('지방소득세 (10%)', fmtWon(localTax) + '원'),
-    resultRow('총 세금', fmtWon(r.tax + localTax) + '원', 'total')
+    resultRow('총 세금', fmtWon(taxAfterCredit + localTax) + '원', 'total')
   ];
 
   var explainText = '과세표준 ' + fmtWon(taxable) + '원에 최고 ' + r.rate +
