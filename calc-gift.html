@@ -52,7 +52,9 @@ var GIFT_DEDUCTIONS_DEFAULT = {
   spouse: 600000000, child: 50000000, child_minor: 20000000,
   parent: 50000000, relative: 10000000, other: 0
 };
-var GIFT_DEDUCTIONS = TAX_CONFIG ? TAX_CONFIG.giftTax.deductions : GIFT_DEDUCTIONS_DEFAULT;
+function getGiftDeductions() {
+  return (TAX_CONFIG && TAX_CONFIG.giftTax) ? TAX_CONFIG.giftTax.deductions : GIFT_DEDUCTIONS_DEFAULT;
+}
 var GIFT_REL_LABELS = {
   spouse: '배우자', child: '성년 자녀', child_minor: '미성년 자녀',
   parent: '부모', relative: '기타 친족', other: '타인'
@@ -63,7 +65,7 @@ function calcGift() {
   var rel = document.getElementById('gift-relation').value;
   if (amount <= 0) { alert('증여 금액을 입력해주세요.'); return; }
 
-  var deduction = GIFT_DEDUCTIONS[rel];
+  var deduction = getGiftDeductions()[rel];
   var taxable = Math.max(0, amount - deduction);
   var r = applyGiftTax(taxable);
 

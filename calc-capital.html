@@ -97,6 +97,13 @@ function calcCapGains() {
 
   if (acqPrice <= 0 || tfPrice <= 0) { alert('취득가액과 양도가액을 입력해주세요.'); return; }
   if (!acqDate || !tfDate) { alert('취득일과 양도일을 입력해주세요.'); return; }
+  // 날짜 유효성 검증
+  if (isNaN(new Date(acqDate).getTime()) || isNaN(new Date(tfDate).getTime())) {
+    alert('올바른 날짜 형식(YYYY-MM-DD)으로 입력해주세요.'); return;
+  }
+  if (new Date(tfDate) <= new Date(acqDate)) {
+    alert('양도일은 취득일 이후여야 합니다.'); return;
+  }
 
   var expenses = broker + improve + acqtax;
   var gain = tfPrice - acqPrice - expenses;
