@@ -125,20 +125,33 @@ function explanationBox(text) {
 var _consultMsg = '';
 var BOT_USERNAME = 'onda_lawyer_bot';
 
+// 클립보드 복사 (동기 방식 — 텔레그램 WebView 호환)
+function copyToClip(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(ta);
+}
+
+// 토스트 메시지 표시
+function showToast(msg) {
+  var d = document.createElement('div');
+  d.textContent = msg;
+  d.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:12px 24px;border-radius:24px;font-size:14px;z-index:9999;text-align:center;max-width:80%;';
+  document.body.appendChild(d);
+  setTimeout(function() { d.remove(); }, 2500);
+}
+
 function sendToChat(message) {
+  copyToClip(message);
   if (tg) {
-    // 텔레그램: 딥링크로 봇 채팅 열기 + 클립보드에 메시지 복사
-    // start 파라미터는 영문만 가능하므로, 한글 메시지는 클립보드로
-    try { navigator.clipboard.writeText(message); } catch(e) {}
-    tg.openTelegramLink('https://t.me/' + BOT_USERNAME);
-    setTimeout(function() { tg.close(); }, 300);
+    showToast('📋 복사 완료! 채팅에 붙여넣기 하세요');
+    setTimeout(function() { tg.close(); }, 1500);
   } else {
-    var ta = document.createElement('textarea');
-    ta.value = message;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
     alert('📋 클립보드에 복사되었습니다!\n텔레그램 봇 채팅에 붙여넣기 하세요.');
   }
 }
@@ -205,19 +218,7 @@ var DOC_CODES = {
 };
 
 function requestDoc(docName) {
-  var code = DOC_CODES[docName] || 'doc_general';
-  if (tg) {
-    tg.openTelegramLink('https://t.me/' + BOT_USERNAME + '?start=' + code);
-    tg.close();
-  } else {
-    var ta = document.createElement('textarea');
-    ta.value = docName + ' 작성해주세요.';
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    alert('📋 "' + docName + ' 작성해주세요"가 복사되었습니다!\n텔레그램 봇 채팅에 붙여넣기 하세요.');
-  }
+  sendToChat(docName + ' 작성해주세요.');
 }
 
 /* ---------- Telegram Back Button ---------- */
