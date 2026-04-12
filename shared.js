@@ -170,15 +170,13 @@ function consultButton(message, startCode) {
 function doConsult() {
   var message = _consultMsg;
   if (!message) { alert('먼저 계산을 실행해주세요.'); return; }
-  if (tg && _consultCode) {
-    // 텔레그램: 파라미터 코드로 봇에 직접 전송
-    tg.openTelegramLink('https://t.me/' + BOT_USERNAME + '?start=' + _consultCode);
-    setTimeout(function() { try { tg.close(); } catch(e) {} }, 500);
+  var userQ = document.getElementById('consult-input');
+  if (userQ && userQ.value.trim()) {
+    message += '\n\n추가 질문: ' + userQ.value.trim();
+  }
+  if (tg) {
+    try { tg.sendData(message); } catch(e) { sendToChat(message); }
   } else {
-    var userQ = document.getElementById('consult-input');
-    if (userQ && userQ.value.trim()) {
-      message += '\n\n추가 질문: ' + userQ.value.trim();
-    }
     sendToChat(message);
   }
 }
@@ -192,10 +190,8 @@ var FAQ_CODES = {
 };
 
 function goConsult(question) {
-  var code = FAQ_CODES[question];
-  if (tg && code) {
-    tg.openTelegramLink('https://t.me/' + BOT_USERNAME + '?start=' + code);
-    setTimeout(function() { try { tg.close(); } catch(e) {} }, 500);
+  if (tg) {
+    try { tg.sendData(question); } catch(e) { sendToChat(question); }
   } else {
     sendToChat(question);
   }
@@ -241,12 +237,11 @@ var DOC_CODES = {
 };
 
 function requestDoc(docName) {
-  var code = DOC_CODES[docName] || 'doc_general';
+  var msg = docName + ' 작성해주세요.';
   if (tg) {
-    tg.openTelegramLink('https://t.me/' + BOT_USERNAME + '?start=' + code);
-    setTimeout(function() { try { tg.close(); } catch(e) {} }, 500);
+    try { tg.sendData(msg); } catch(e) { sendToChat(msg); }
   } else {
-    sendToChat(docName + ' 작성해주세요.');
+    sendToChat(msg);
   }
 }
 
