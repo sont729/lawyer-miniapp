@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>법률 문서 작성 - 법률 AI</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+
+<div class="page-header">
+  <button class="back-btn" onclick="goBack()">← 뒤로</button>
+  <h1>법률 문서 작성</h1>
+</div>
+
+<div class="container fade-in">
+  <p class="subtitle">채팅에서 AI에게 요청하면 문서를 작성해드립니다</p>
+  <div id="doc-list"></div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>홈</span></a>
+  <a href="consult.html"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/></svg><span>상담</span></a>
+  <a href="calc-index.html"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 14h-2v-4H7v-2h6V7h2v4h4v2h-4v4z"/></svg><span>세금계산</span></a>
+  <a href="lawsuit.html"><svg viewBox="0 0 24 24"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg><span>소송비용</span></a>
+  <a href="docs.html" class="active"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg><span>문서작성</span></a>
+</nav>
+
+<script src="shared.js"></script>
+<script>
+setupTelegramBackButton(false);
+
+var DOC_LIST = [
+  { name: '내용증명', desc: '상대방에게 법적 의사를 공식 통보', color: '#e74c3c', icon: '📮' },
+  { name: '고소장', desc: '형사 범죄를 수사기관에 신고', color: '#c0392b', icon: '🚨' },
+  { name: '민사소장', desc: '민사 소송을 법원에 제기', color: '#2980b9', icon: '⚖️' },
+  { name: '합의서', desc: '분쟁 당사자 간 합의 내용 문서화', color: '#27ae60', icon: '🤝' },
+  { name: '근로계약서', desc: '근로 조건을 명시한 계약 문서', color: '#f39c12', icon: '📋' },
+  { name: '차용증', desc: '금전 대차 관계를 증명', color: '#8e44ad', icon: '💰' },
+  { name: '진정서', desc: '행정기관에 시정을 요구', color: '#16a085', icon: '📝' },
+  { name: '이의신청서', desc: '행정 처분 등에 이의를 제기', color: '#2c3e50', icon: '✋' },
+  { name: '위임장', desc: '권한을 대리인에게 위임', color: '#d35400', icon: '🔑' },
+  { name: '사직서', desc: '근로자의 퇴직 의사를 표시', color: '#7f8c8d', icon: '👋' },
+  { name: '경위서', desc: '사건의 경위를 상세히 기술', color: '#34495e', icon: '📄' },
+  { name: '상속포기신고서', desc: '상속을 포기하는 신고 문서', color: '#1abc9c', icon: '🏠' },
+  { name: '부당해고구제신청서', desc: '부당해고에 대한 구제 신청', color: '#e67e22', icon: '🛡️' },
+  { name: 'NDA (비밀유지계약서)', desc: '영업비밀 보호 계약', color: '#9b59b6', icon: '🔒' },
+  { name: '업무위탁계약서', desc: '업무 위탁/외주 관련 계약', color: '#3498db', icon: '📑' },
+  { name: '분납요청서', desc: '세금/과태료 등의 분할 납부 요청', color: '#e74c3c', icon: '📊' },
+  { name: '각서', desc: '특정 사항에 대한 서약 문서', color: '#2ecc71', icon: '✍️' },
+  { name: '고소취하서', desc: '제출한 고소를 철회', color: '#95a5a6', icon: '↩️' },
+  { name: '답변서', desc: '소송에서 피고의 답변을 제출', color: '#2c3e50', icon: '💬' },
+  { name: '임대차계약서', desc: '부동산 임대차 계약 문서', color: '#f1c40f', icon: '🏢' },
+  { name: '이혼합의서', desc: '협의이혼 시 재산분할/양육 합의', color: '#e91e63', icon: '📃' }
+];
+
+function buildDocList() {
+  var container = document.getElementById('doc-list');
+  var html = '';
+  for (var i = 0; i < DOC_LIST.length; i++) {
+    var d = DOC_LIST[i];
+    var safeName = d.name.replace(/'/g, "\\'");
+    html += '<div class="doc-item" onclick="requestDoc(\'' + safeName + '\')">' +
+      '<div class="doc-icon" style="background:' + d.color + '22;color:' + d.color + '">' + d.icon + '</div>' +
+      '<div class="doc-info"><div class="name">' + d.name + '</div><div class="desc">' + d.desc + '</div></div>' +
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--hint)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>';
+  }
+  container.innerHTML = html;
+}
+
+document.addEventListener('DOMContentLoaded', buildDocList);
+</script>
+</body>
+</html>

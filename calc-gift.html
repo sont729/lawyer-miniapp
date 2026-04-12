@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>증여세 계산기 - 법률 AI</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+
+<div class="page-header">
+  <button class="back-btn" onclick="location.href='calc-index.html'">← 뒤로</button>
+  <h1>증여세 계산기</h1>
+</div>
+
+<div class="container fade-in">
+  <div class="card">
+    <div class="form-group">
+      <label>증여 금액 (원)</label>
+      <input type="text" id="gift-amount" inputmode="numeric" placeholder="예: 100,000,000" data-comma>
+    </div>
+    <div class="form-group">
+      <label>증여자와의 관계</label>
+      <select id="gift-relation">
+        <option value="spouse">배우자</option>
+        <option value="child" selected>성년 자녀</option>
+        <option value="child_minor">미성년 자녀</option>
+        <option value="parent">부모 (자녀가 증여)</option>
+        <option value="relative">기타 친족 (6촌 이내)</option>
+        <option value="other">타인</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="calcGift()">계산하기</button>
+    <div id="gift-result"></div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>홈</span></a>
+  <a href="consult.html"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/></svg><span>상담</span></a>
+  <a href="calc-index.html" class="active"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 14h-2v-4H7v-2h6V7h2v4h4v2h-4v4z"/></svg><span>세금계산</span></a>
+  <a href="lawsuit.html"><svg viewBox="0 0 24 24"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg><span>소송비용</span></a>
+  <a href="docs.html"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg><span>문서작성</span></a>
+</nav>
+
+<script src="shared.js"></script>
+<script>
+setupTelegramBackButton(false);
+
+var GIFT_DEDUCTIONS = {
+  spouse: 600000000, child: 50000000, child_minor: 20000000,
+  parent: 50000000, relative: 10000000, other: 0
+};
+var GIFT_REL_LABELS = {
+  spouse: '배우자', child: '성년 자녀', child_minor: '미성년 자녀',
+  parent: '부모', relative: '기타 친족', other: '타인'
+};
+
+function calcGift() {
+  var amount = parseWon(document.getElementById('gift-amount').value);
+  var rel = document.getElementById('gift-relation').value;
+  if (amount <= 0) { alert('증여 금액을 입력해주세요.'); return; }
+
+  var deduction = GIFT_DEDUCTIONS[rel];
+  var taxable = Math.max(0, amount - deduction);
+  var r = applyGiftTax(taxable);
+
+  var rows = [
+    resultRow('증여 금액', fmtWon(amount) + '원'),
+    resultRow('관계', GIFT_REL_LABELS[rel]),
+    resultRow('면제 한도 (10년)', fmtWon(deduction) + '원'),
+    resultRow('과세표준', fmtWon(taxable) + '원'),
+    resultRow('적용 세율', r.rate + '%'),
+    resultRow('누진공제', fmtWon(r.deduct) + '원'),
+    resultRow('증여세', fmtWon(r.tax) + '원', 'total')
+  ];
+
+  var explainText = GIFT_REL_LABELS[rel] + '에게 ' + fmtWon(amount) + '원 증여 시, ' +
+    fmtWon(deduction) + '원 공제 후 과세표준 ' + fmtWon(taxable) + '원에 대해 ' +
+    r.rate + '% 세율이 적용됩니다. ' +
+    '증여일이 속하는 달의 말일부터 3개월 이내 신고하면 신고세액공제(3%)를 받을 수 있습니다. ' +
+    '동일인에게 10년간 받은 증여를 합산하므로, 이전 증여가 있다면 실제 세액이 달라질 수 있습니다.';
+
+  var consultMsg = '증여세 상담: ' + GIFT_REL_LABELS[rel] + '에게 ' + fmtWon(amount) + '원 증여, 예상세액 ' + fmtWon(r.tax) + '원. 절세 방법 알려주세요.';
+
+  document.getElementById('gift-result').innerHTML =
+    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg);
+}
+</script>
+</body>
+</html>

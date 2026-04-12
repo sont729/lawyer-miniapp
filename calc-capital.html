@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>양도소득세 계산기 - 법률 AI</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+
+<div class="page-header">
+  <button class="back-btn" onclick="location.href='calc-index.html'">← 뒤로</button>
+  <h1>양도소득세 계산기</h1>
+</div>
+
+<div class="container fade-in">
+  <div class="card">
+    <div class="form-group">
+      <label>취득가액 (원)</label>
+      <input type="text" id="cg-acq-price" inputmode="numeric" placeholder="매입 가격" data-comma>
+    </div>
+    <div class="form-group">
+      <label>양도가액 (원)</label>
+      <input type="text" id="cg-tf-price" inputmode="numeric" placeholder="매도 가격" data-comma>
+    </div>
+    <div class="form-group">
+      <label>취득일</label>
+      <input type="text" id="cg-acq-date" placeholder="2020-01-15">
+    </div>
+    <div class="form-group">
+      <label>양도일</label>
+      <input type="text" id="cg-tf-date" placeholder="2026-04-12">
+    </div>
+    <div class="form-group">
+      <label>주택 보유 유형</label>
+      <select id="cg-household">
+        <option value="1household1house">1세대 1주택</option>
+        <option value="2houses">2주택</option>
+        <option value="3plus">3주택 이상</option>
+      </select>
+    </div>
+    <div class="checkbox-group">
+      <input type="checkbox" id="cg-adjust">
+      <label for="cg-adjust">조정대상지역</label>
+    </div>
+    <div class="form-group">
+      <label>거주 시작일 (1세대 1주택 시)</label>
+      <input type="text" id="cg-res-start" placeholder="2020-01-15">
+    </div>
+    <div class="form-group">
+      <label>거주 종료일</label>
+      <input type="text" id="cg-res-end" placeholder="2026-04-12">
+    </div>
+    <h3 class="mt-16">필요경비</h3>
+    <div class="form-group">
+      <label>중개수수료 (원)</label>
+      <input type="text" id="cg-broker" inputmode="numeric" placeholder="0" data-comma>
+    </div>
+    <div class="form-group">
+      <label>개량비/수리비 (원)</label>
+      <input type="text" id="cg-improve" inputmode="numeric" placeholder="0" data-comma>
+    </div>
+    <div class="form-group">
+      <label>취득세 등 (원)</label>
+      <input type="text" id="cg-acqtax" inputmode="numeric" placeholder="0" data-comma>
+    </div>
+    <button class="btn btn-primary" onclick="calcCapGains()">계산하기</button>
+    <div id="cg-result"></div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>홈</span></a>
+  <a href="consult.html"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/></svg><span>상담</span></a>
+  <a href="calc-index.html" class="active"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 14h-2v-4H7v-2h6V7h2v4h4v2h-4v4z"/></svg><span>세금계산</span></a>
+  <a href="lawsuit.html"><svg viewBox="0 0 24 24"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg><span>소송비용</span></a>
+  <a href="docs.html"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg><span>문서작성</span></a>
+</nav>
+
+<script src="shared.js"></script>
+<script>
+setupTelegramBackButton(false);
+
+function calcCapGains() {
+  var acqPrice = parseWon(document.getElementById('cg-acq-price').value);
+  var tfPrice = parseWon(document.getElementById('cg-tf-price').value);
+  var acqDate = document.getElementById('cg-acq-date').value.trim();
+  var tfDate = document.getElementById('cg-tf-date').value.trim();
+  var household = document.getElementById('cg-household').value;
+  var isAdjust = document.getElementById('cg-adjust').checked;
+  var resStart = document.getElementById('cg-res-start').value.trim();
+  var resEnd = document.getElementById('cg-res-end').value.trim();
+  var broker = parseWon(document.getElementById('cg-broker').value);
+  var improve = parseWon(document.getElementById('cg-improve').value);
+  var acqtax = parseWon(document.getElementById('cg-acqtax').value);
+
+  if (acqPrice <= 0 || tfPrice <= 0) { alert('취득가액과 양도가액을 입력해주세요.'); return; }
+  if (!acqDate || !tfDate) { alert('취득일과 양도일을 입력해주세요.'); return; }
+
+  var expenses = broker + improve + acqtax;
+  var gain = tfPrice - acqPrice - expenses;
+  var holdYears = dateDiffYears(acqDate, tfDate);
+  var holdDays = dateDiffDays(acqDate, tfDate);
+  var explainParts = [];
+
+  var rows = [
+    resultRow('양도가액', fmtWon(tfPrice) + '원'),
+    resultRow('취득가액', fmtWon(acqPrice) + '원'),
+    resultRow('필요경비', fmtWon(expenses) + '원'),
+    resultRow('양도차익', fmtWon(gain) + '원'),
+    resultRow('보유기간', holdYears + '년 (' + holdDays + '일)')
+  ];
+
+  if (gain <= 0) {
+    rows.push(resultRow('양도소득세', '0원 (차익 없음)', 'total'));
+    explainParts.push('양도차익이 없으므로 양도소득세가 발생하지 않습니다.');
+    var consultMsg = '양도소득세 상담: ' + fmtWon(acqPrice) + '원에 취득하여 ' + fmtWon(tfPrice) + '원에 양도, 차익 없음. 다른 절세 방법이 있는지 알려주세요.';
+    document.getElementById('cg-result').innerHTML = resultBox(rows) + explanationBox(explainParts.join(' ')) + consultButton(consultMsg);
+    return;
+  }
+
+  var is1house = (household === '1household1house');
+  var totalTax = 0;
+
+  if (is1house && holdYears >= 2) {
+    if (tfPrice <= 1200000000) {
+      rows.push(resultRow('비과세', '1세대 1주택 비과세 (2년 이상 보유, 12억 이하)'));
+      rows.push(resultRow('양도소득세', '0원', 'total'));
+      explainParts.push('1세대 1주택으로 2년 이상 보유하고, 양도가액이 12억원 이하이므로 비과세입니다.');
+      var consultMsg = '양도소득세 상담: 1세대 1주택 비과세 적용. 다른 세금 이슈가 있는지 확인해주세요.';
+      document.getElementById('cg-result').innerHTML = resultBox(rows) + explanationBox(explainParts.join(' ')) + consultButton(consultMsg);
+      return;
+    }
+    var taxableGain = Math.floor(gain * (tfPrice - 1200000000) / tfPrice);
+    var pct = Math.round((tfPrice - 1200000000) * 100 / tfPrice);
+    rows.push(resultRow('12억 초과분 과세', '양도차익의 ' + pct + '%'));
+    gain = taxableGain;
+    rows.push(resultRow('과세 양도차익', fmtWon(gain) + '원'));
+    explainParts.push('1세대 1주택이지만 양도가액이 12억원을 초과하므로, 초과분(' + pct + '%)에 대해서만 과세됩니다.');
+  }
+
+  var ltRate = 0;
+  if (is1house && holdYears >= 3) {
+    var holdRate = Math.min(holdYears * 4, 40);
+    var resYears = 0;
+    if (resStart && resEnd) resYears = dateDiffYears(resStart, resEnd);
+    var resRate = Math.min(resYears * 4, 40);
+    ltRate = holdRate + resRate;
+    rows.push(resultRow('보유공제율', holdRate + '% (보유 ' + holdYears + '년)'));
+    if (resYears > 0) rows.push(resultRow('거주공제율', resRate + '% (거주 ' + resYears + '년)'));
+    rows.push(resultRow('장기보유특별공제율', ltRate + '%'));
+    explainParts.push('1세대 1주택 장기보유특별공제: 보유 ' + holdRate + '% + 거주 ' + resRate + '% = ' + ltRate + '% 적용.');
+  } else if (!is1house && holdYears >= 3) {
+    ltRate = Math.min(holdYears * 2, 30);
+    rows.push(resultRow('장기보유특별공제율', ltRate + '% (보유 ' + holdYears + '년)'));
+    explainParts.push('일반 장기보유특별공제 ' + ltRate + '% 적용 (연 2%, 최대 30%).');
+  }
+
+  var ltDeduction = 0;
+  if (ltRate > 0) {
+    ltDeduction = Math.floor(gain * ltRate / 100);
+    rows.push(resultRow('장기보유특별공제액', fmtWon(ltDeduction) + '원'));
+  }
+
+  var afterLt = gain - ltDeduction;
+  var basicDeduct = 2500000;
+  var taxable = Math.max(0, afterLt - basicDeduct);
+  rows.push(resultRow('기본공제', fmtWon(basicDeduct) + '원'));
+  rows.push(resultRow('과세표준', fmtWon(taxable) + '원'));
+
+  var finalTax = 0;
+  if (holdDays < 365) {
+    finalTax = Math.floor(taxable * 50 / 100);
+    rows.push(resultRow('단기 보유 세율', '50% (1년 미만)'));
+    explainParts.push('1년 미만 보유로 50% 단기 세율이 적용됩니다.');
+  } else if (holdDays < 730) {
+    finalTax = Math.floor(taxable * 40 / 100);
+    rows.push(resultRow('단기 보유 세율', '40% (2년 미만)'));
+    explainParts.push('2년 미만 보유로 40% 단기 세율이 적용됩니다.');
+  } else {
+    var tfDateObj = new Date(tfDate);
+    var surchargeExemptEnd = new Date('2026-05-09');
+    var surcharge = 0;
+    if (isAdjust && tfDateObj > surchargeExemptEnd) {
+      if (household === '2houses') surcharge = 20;
+      else if (household === '3plus') surcharge = 30;
+    }
+
+    var r = applyIncomeTax(taxable);
+    finalTax = r.tax;
+    rows.push(resultRow('기본세율', r.rate + '%'));
+    if (surcharge > 0) {
+      var surTax = Math.floor(taxable * surcharge / 100);
+      finalTax += surTax;
+      rows.push(resultRow('중과세율', '+' + surcharge + '% (조정지역)'));
+      rows.push(resultRow('중과세액', fmtWon(surTax) + '원'));
+      explainParts.push('조정대상지역 중과세율 +' + surcharge + '%가 추가 적용됩니다.');
+    }
+    if (!surcharge && !explainParts.length) {
+      explainParts.push('기본 소득세율 ' + r.rate + '%가 적용됩니다.');
+    }
+  }
+
+  var localTax = Math.floor(finalTax * 10 / 100);
+  rows.push(resultRow('양도소득세', fmtWon(finalTax) + '원'));
+  rows.push(resultRow('지방소득세 (10%)', fmtWon(localTax) + '원'));
+  rows.push(resultRow('총 납부세액', fmtWon(finalTax + localTax) + '원', 'total'));
+
+  explainParts.push('양도일이 속하는 달의 말일부터 2개월 이내에 예정신고하고, 다음 해 5월에 확정신고해야 합니다.');
+
+  var consultMsg = '양도소득세 상담: ' + fmtWon(acqPrice) + '원 취득 → ' + fmtWon(tfPrice) + '원 양도, 보유 ' + holdYears + '년, 예상세액 ' + fmtWon(finalTax + localTax) + '원. 비과세/감면 가능한지 알려주세요.';
+
+  document.getElementById('cg-result').innerHTML =
+    resultBox(rows) + explanationBox(explainParts.join(' ')) + consultButton(consultMsg);
+}
+</script>
+</body>
+</html>

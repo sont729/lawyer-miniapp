@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>종합부동산세 계산기 - 법률 AI</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+
+<div class="page-header">
+  <button class="back-btn" onclick="location.href='calc-index.html'">← 뒤로</button>
+  <h1>종합부동산세 계산기</h1>
+</div>
+
+<div class="container fade-in">
+  <div class="card">
+    <div class="form-group">
+      <label>공시가격 합계 (원)</label>
+      <input type="text" id="cret-value" inputmode="numeric" placeholder="예: 1,500,000,000" data-comma>
+    </div>
+    <div class="form-group">
+      <label>주택 유형</label>
+      <select id="cret-type">
+        <option value="1house" selected>1세대 1주택</option>
+        <option value="multi">다주택/법인</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="calcCRET()">계산하기</button>
+    <div id="cret-result"></div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>홈</span></a>
+  <a href="consult.html"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/></svg><span>상담</span></a>
+  <a href="calc-index.html" class="active"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 14h-2v-4H7v-2h6V7h2v4h4v2h-4v4z"/></svg><span>세금계산</span></a>
+  <a href="lawsuit.html"><svg viewBox="0 0 24 24"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg><span>소송비용</span></a>
+  <a href="docs.html"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg><span>문서작성</span></a>
+</nav>
+
+<script src="shared.js"></script>
+<script>
+setupTelegramBackButton(false);
+
+function calcCRET() {
+  var assessed = parseWon(document.getElementById('cret-value').value);
+  var houseType = document.getElementById('cret-type').value;
+  if (assessed <= 0) { alert('공시가격을 입력해주세요.'); return; }
+
+  var fairRatio = 60;
+  var baseDeduct = (houseType === '1house') ? 1200000000 : 900000000;
+  var adjustedValue = Math.floor(assessed * fairRatio / 100);
+  var taxable = Math.max(0, adjustedValue - baseDeduct);
+
+  var rate = 0, progDeduct = 0;
+  if (houseType === '1house') {
+    if (taxable <= 300000000) { rate = 50; progDeduct = 0; }
+    else if (taxable <= 600000000) { rate = 70; progDeduct = 600000; }
+    else if (taxable <= 1200000000) { rate = 100; progDeduct = 2400000; }
+    else if (taxable <= 2500000000) { rate = 130; progDeduct = 6000000; }
+    else if (taxable <= 5000000000) { rate = 150; progDeduct = 11000000; }
+    else { rate = 200; progDeduct = 36000000; }
+  } else {
+    if (taxable <= 300000000) { rate = 50; progDeduct = 0; }
+    else if (taxable <= 600000000) { rate = 70; progDeduct = 600000; }
+    else if (taxable <= 1200000000) { rate = 100; progDeduct = 2400000; }
+    else if (taxable <= 2500000000) { rate = 130; progDeduct = 6000000; }
+    else if (taxable <= 5000000000) { rate = 150; progDeduct = 11000000; }
+    else if (taxable <= 9400000000) { rate = 200; progDeduct = 36000000; }
+    else { rate = 270; progDeduct = 101800000; }
+  }
+
+  var tax = Math.floor(taxable * rate / 10000) - progDeduct;
+  if (tax < 0) tax = 0;
+  var nongSpec = Math.floor(tax * 20 / 100);
+
+  var baseLabel = houseType === '1house' ? '12억 (1세대 1주택)' : '9억 (다주택)';
+
+  var rows = [
+    resultRow('공시가격 합계', fmtWon(assessed) + '원'),
+    resultRow('공정시장가액비율', fairRatio + '%'),
+    resultRow('공정시장가액', fmtWon(adjustedValue) + '원'),
+    resultRow('기본공제', fmtWon(baseDeduct) + '원 (' + baseLabel + ')'),
+    resultRow('과세표준', fmtWon(taxable) + '원'),
+    resultRow('세율', (rate / 100).toFixed(1) + '%'),
+    resultRow('누진공제', fmtWon(progDeduct) + '원'),
+    resultRow('종합부동산세', fmtWon(tax) + '원'),
+    resultRow('농어촌특별세 (20%)', fmtWon(nongSpec) + '원'),
+    resultRow('총 납부액', fmtWon(tax + nongSpec) + '원', 'total')
+  ];
+
+  var explainText = '공시가격 ' + fmtWon(assessed) + '원에 공정시장가액비율 60% 적용, 기본공제 ' +
+    fmtWon(baseDeduct) + ' 차감. 매년 12월에 부과되며 재산세와 별도로 납부합니다. ' +
+    '1세대 1주택자는 고령자 세액공제(60세 이상), 장기보유 세액공제(5년 이상) 추가 적용이 가능합니다.';
+
+  var consultMsg = '종합부동산세 상담: 공시가격 ' + fmtWon(assessed) + '원, ' +
+    (houseType === '1house' ? '1세대 1주택' : '다주택') + ', 예상세액 ' + fmtWon(tax + nongSpec) + '원. 감면 방법 알려주세요.';
+
+  document.getElementById('cret-result').innerHTML =
+    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg);
+}
+</script>
+</body>
+</html>

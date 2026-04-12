@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>취득세 계산기 - 법률 AI</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+
+<div class="page-header">
+  <button class="back-btn" onclick="location.href='calc-index.html'">← 뒤로</button>
+  <h1>취득세 계산기</h1>
+</div>
+
+<div class="container fade-in">
+  <div class="card">
+    <div class="form-group">
+      <label>취득가액 (원)</label>
+      <input type="text" id="acq-price" inputmode="numeric" placeholder="예: 500,000,000" data-comma>
+    </div>
+    <div class="form-group">
+      <label>부동산 유형</label>
+      <select id="acq-type" onchange="toggleAcqHousing()">
+        <option value="house" selected>주택</option>
+        <option value="land">토지</option>
+        <option value="commercial">상가/건물</option>
+      </select>
+    </div>
+    <div id="acq-housing-opts">
+      <div class="form-group">
+        <label>주택 수</label>
+        <select id="acq-count">
+          <option value="1" selected>1주택</option>
+          <option value="2">2주택</option>
+          <option value="3">3주택 이상</option>
+          <option value="4">법인/4주택+</option>
+        </select>
+      </div>
+      <div class="checkbox-group">
+        <input type="checkbox" id="acq-adjust">
+        <label for="acq-adjust">조정대상지역</label>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="calcAcquire()">계산하기</button>
+    <div id="acq-result"></div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>홈</span></a>
+  <a href="consult.html"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/></svg><span>상담</span></a>
+  <a href="calc-index.html" class="active"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 14h-2v-4H7v-2h6V7h2v4h4v2h-4v4z"/></svg><span>세금계산</span></a>
+  <a href="lawsuit.html"><svg viewBox="0 0 24 24"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg><span>소송비용</span></a>
+  <a href="docs.html"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg><span>문서작성</span></a>
+</nav>
+
+<script src="shared.js"></script>
+<script>
+setupTelegramBackButton(false);
+
+function toggleAcqHousing() {
+  var isHouse = document.getElementById('acq-type').value === 'house';
+  document.getElementById('acq-housing-opts').style.display = isHouse ? 'block' : 'none';
+}
+toggleAcqHousing();
+
+function calcAcquire() {
+  var price = parseWon(document.getElementById('acq-price').value);
+  var propType = document.getElementById('acq-type').value;
+  if (price <= 0) { alert('취득가액을 입력해주세요.'); return; }
+
+  var acqTaxRate = 0;
+  var nongSpecRate = 0;
+  var eduRate = 0;
+  var rateLabel = '';
+  var typeLabel = '';
+
+  if (propType === 'land') {
+    acqTaxRate = 400; eduRate = 40; nongSpecRate = 20;
+    rateLabel = '4% (토지)';
+    typeLabel = '토지';
+  } else if (propType === 'commercial') {
+    acqTaxRate = 400; eduRate = 40; nongSpecRate = 20;
+    rateLabel = '4% (상가/건물)';
+    typeLabel = '상가/건물';
+  } else {
+    typeLabel = '주택';
+    var count = document.getElementById('acq-count').value;
+    var isAdj = document.getElementById('acq-adjust').checked;
+
+    if (count === '4') {
+      acqTaxRate = 1200; rateLabel = '12% (법인/4주택+)'; nongSpecRate = 100;
+    } else if (count === '3') {
+      if (isAdj) { acqTaxRate = 1200; rateLabel = '12% (3주택+, 조정지역)'; nongSpecRate = 100; }
+      else { acqTaxRate = 800; rateLabel = '8% (3주택+, 비조정)'; nongSpecRate = 60; }
+    } else if (count === '2') {
+      if (isAdj) { acqTaxRate = 800; rateLabel = '8% (2주택, 조정지역)'; nongSpecRate = 60; }
+      else {
+        if (price <= 600000000) { acqTaxRate = 100; rateLabel = '1% (2주택, 비조정, 6억 이하)'; }
+        else if (price <= 900000000) {
+          var interpRate = 100 + Math.floor((price - 600000000) * 200 / 300000000);
+          acqTaxRate = interpRate; rateLabel = (interpRate / 100).toFixed(2) + '% (2주택, 비조정, 6~9억)';
+        } else { acqTaxRate = 300; rateLabel = '3% (2주택, 비조정, 9억 초과)'; }
+        nongSpecRate = 20;
+      }
+    } else {
+      if (price <= 600000000) { acqTaxRate = 100; rateLabel = '1% (1주택, 6억 이하)'; }
+      else if (price <= 900000000) {
+        var interpRate2 = 100 + Math.floor((price - 600000000) * 200 / 300000000);
+        acqTaxRate = interpRate2; rateLabel = (interpRate2 / 100).toFixed(2) + '% (1주택, 6~9억)';
+      } else { acqTaxRate = 300; rateLabel = '3% (1주택, 9억 초과)'; }
+      nongSpecRate = 20;
+    }
+    eduRate = Math.floor(acqTaxRate / 10);
+  }
+
+  var acqTax = Math.floor(price * acqTaxRate / 10000);
+  var nongSpec = Math.floor(price * nongSpecRate / 10000);
+  var edu = Math.floor(price * eduRate / 10000);
+  var total = acqTax + nongSpec + edu;
+
+  var rows = [
+    resultRow('취득가액', fmtWon(price) + '원'),
+    resultRow('취득세율', rateLabel),
+    resultRow('취득세', fmtWon(acqTax) + '원'),
+    resultRow('농어촌특별세', fmtWon(nongSpec) + '원'),
+    resultRow('지방교육세', fmtWon(edu) + '원'),
+    resultRow('총 납부액', fmtWon(total) + '원', 'total')
+  ];
+
+  var explainText = typeLabel + ' ' + fmtWon(price) + '원 취득 시 ' + rateLabel +
+    ' 적용. 취득일로부터 60일 이내 신고 및 납부해야 합니다. ' +
+    '농어촌특별세와 지방교육세가 부가되어 실제 부담액은 취득세보다 높습니다.';
+
+  var consultMsg = '취득세 상담: ' + typeLabel + ' ' + fmtWon(price) + '원 취득, 총 세금 ' + fmtWon(total) + '원. 감면 가능한지 알려주세요.';
+
+  document.getElementById('acq-result').innerHTML =
+    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg);
+}
+</script>
+</body>
+</html>

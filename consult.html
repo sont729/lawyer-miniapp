@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AI 법률 상담 - 법률 AI</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+
+<div class="page-header">
+  <button class="back-btn" onclick="goBack()">← 뒤로</button>
+  <h1>AI 법률 상담</h1>
+</div>
+
+<div class="container fade-in">
+  <div class="consult-center">
+    <div class="consult-icon">💬</div>
+    <h2>AI 법률 상담</h2>
+    <p class="subtitle">채팅으로 돌아가서 질문하시면<br>AI가 법률 상담을 도와드립니다</p>
+    <button class="btn btn-primary mb-16" onclick="goChat()">채팅으로 돌아가기</button>
+  </div>
+
+  <h3>이런 질문을 해보세요</h3>
+  <div class="example-q" onclick="goConsult('전세사기를 당했는데 보증금을 돌려받을 수 있나요?')">전세사기를 당했는데 보증금을 돌려받을 수 있나요?</div>
+  <div class="example-q" onclick="goConsult('직장에서 부당해고를 당했어요. 어떻게 해야 하나요?')">직장에서 부당해고를 당했어요. 어떻게 해야 하나요?</div>
+  <div class="example-q" onclick="goConsult('빌려준 돈을 안 갚는데 소송하려면 비용이 얼마나 드나요?')">빌려준 돈을 안 갚는데 소송하려면 비용이 얼마나 드나요?</div>
+  <div class="example-q" onclick="goConsult('이혼할 때 양육권은 어떻게 결정되나요?')">이혼할 때 양육권은 어떻게 결정되나요?</div>
+  <div class="example-q" onclick="goConsult('아파트 양도세가 얼마나 나올까요?')">아파트 양도세가 얼마나 나올까요?</div>
+  <div class="example-q" onclick="goConsult('증여세 면제 한도가 얼마인가요?')">증여세 면제 한도가 얼마인가요?</div>
+  <div class="example-q" onclick="goConsult('내용증명을 보내고 싶은데 어떻게 작성하나요?')">내용증명을 보내고 싶은데 어떻게 작성하나요?</div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>홈</span></a>
+  <a href="consult.html" class="active"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/></svg><span>상담</span></a>
+  <a href="calc-index.html"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 14h-2v-4H7v-2h6V7h2v4h4v2h-4v4z"/></svg><span>세금계산</span></a>
+  <a href="lawsuit.html"><svg viewBox="0 0 24 24"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg><span>소송비용</span></a>
+  <a href="docs.html"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg><span>문서작성</span></a>
+</nav>
+
+<script src="shared.js"></script>
+<script>
+  setupTelegramBackButton(false);
+</script>
+</body>
+</html>

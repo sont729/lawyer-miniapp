@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>법률 AI 상담</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+
+<div class="container fade-in">
+  <div class="hero">
+    <h1>무료 법률 AI 상담</h1>
+    <p>세금 계산, 소송 비용, 문서 작성까지</p>
+  </div>
+
+  <!-- AI 상담 메인 배너 -->
+  <a href="consult.html" style="display:block;background:linear-gradient(135deg,#2AABEE 0%,#1565C0 100%);border-radius:16px;padding:32px 24px;margin-bottom:20px;color:white;text-decoration:none;text-align:center;box-shadow:0 4px 20px rgba(42,171,238,0.3);">
+    <div style="font-size:44px;margin-bottom:10px;">💬</div>
+    <div style="font-size:22px;font-weight:700;margin-bottom:6px;">AI 법률 상담 시작하기</div>
+    <div style="font-size:14px;opacity:0.85;line-height:1.5;">법률·세무 궁금한 점을 바로 물어보세요<br>양도세·증여세 계산, 소송비용, 문서작성까지</div>
+  </a>
+
+  <!-- 기능 메뉴 (2x3 그리드) -->
+  <div class="menu-grid">
+    <a class="menu-card" href="calc-salary.html">
+      <div class="icon">💰</div>
+      <div class="label">월급 계산</div>
+      <div class="desc">실수령액/4대보험</div>
+    </a>
+    <a class="menu-card" href="calc-index.html">
+      <div class="icon">🧮</div>
+      <div class="label">세금 계산기</div>
+      <div class="desc">9종 세금 계산</div>
+    </a>
+    <a class="menu-card" href="lawsuit.html">
+      <div class="icon">⚖️</div>
+      <div class="label">소송 비용</div>
+      <div class="desc">인지대/송달료</div>
+    </a>
+    <a class="menu-card" href="docs.html">
+      <div class="icon">📄</div>
+      <div class="label">문서 작성</div>
+      <div class="desc">21종 법률 문서</div>
+    </a>
+  </div>
+
+  <h3>자주 묻는 질문</h3>
+  <div class="faq-item" onclick="goConsult('전세보증금을 돌려받으려면 어떻게 해야 하나요?')">전세보증금을 돌려받으려면 어떻게 해야 하나요?</div>
+  <div class="faq-item" onclick="goConsult('부당해고를 당했는데 어떻게 대응해야 하나요?')">부당해고를 당했는데 어떻게 대응해야 하나요?</div>
+  <div class="faq-item" onclick="goConsult('교통사고 합의금은 어떻게 산정하나요?')">교통사고 합의금은 어떻게 산정하나요?</div>
+  <div class="faq-item" onclick="goConsult('이혼 시 재산분할은 어떻게 되나요?')">이혼 시 재산분할은 어떻게 되나요?</div>
+  <div class="faq-item" onclick="goConsult('상속포기는 언제까지 해야 하나요?')">상속포기는 언제까지 해야 하나요?</div>
+</div>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <a href="index.html" class="active">
+    <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    <span>홈</span>
+  </a>
+  <a href="consult.html">
+    <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/></svg>
+    <span>상담</span>
+  </a>
+  <a href="calc-index.html">
+    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 14h-2v-4H7v-2h6V7h2v4h4v2h-4v4z"/></svg>
+    <span>세금계산</span>
+  </a>
+  <a href="lawsuit.html">
+    <svg viewBox="0 0 24 24"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg>
+    <span>소송비용</span>
+  </a>
+  <a href="docs.html">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>
+    <span>문서작성</span>
+  </a>
+</nav>
+
+<script src="shared.js"></script>
+<script>
+  setupTelegramBackButton(true);
+</script>
+</body>
+</html>

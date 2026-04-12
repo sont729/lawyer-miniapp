@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>부가가치세 계산기 - 법률 AI</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+
+<div class="page-header">
+  <button class="back-btn" onclick="location.href='calc-index.html'">← 뒤로</button>
+  <h1>부가가치세 계산기</h1>
+</div>
+
+<div class="container fade-in">
+  <div class="card">
+    <div class="form-group">
+      <label>매출액 (원, 공급가액+부가세 합계)</label>
+      <input type="text" id="vat-sales" inputmode="numeric" placeholder="예: 50,000,000" data-comma>
+    </div>
+    <div class="form-group">
+      <label>매입액 (원, 공급가액+부가세 합계)</label>
+      <input type="text" id="vat-purchase" inputmode="numeric" placeholder="예: 30,000,000" data-comma>
+    </div>
+    <div class="checkbox-group">
+      <input type="checkbox" id="vat-simple">
+      <label for="vat-simple">간이과세자 (연 매출 1.04억 미만)</label>
+    </div>
+    <div id="vat-industry-wrap" class="form-group hidden">
+      <label>업종 선택 (간이과세 부가가치율)</label>
+      <select id="vat-industry">
+        <option value="15">소매업 (15%)</option>
+        <option value="20">제조업 (20%)</option>
+        <option value="30" selected>서비스업 (30%)</option>
+        <option value="40">음식점업 (40%)</option>
+        <option value="40">부동산임대 (40%)</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="calcVAT()">계산하기</button>
+    <div id="vat-result"></div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>홈</span></a>
+  <a href="consult.html"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/></svg><span>상담</span></a>
+  <a href="calc-index.html" class="active"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 14h-2v-4H7v-2h6V7h2v4h4v2h-4v4z"/></svg><span>세금계산</span></a>
+  <a href="lawsuit.html"><svg viewBox="0 0 24 24"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg><span>소송비용</span></a>
+  <a href="docs.html"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg><span>문서작성</span></a>
+</nav>
+
+<script src="shared.js"></script>
+<script>
+setupTelegramBackButton(false);
+
+document.getElementById('vat-simple').addEventListener('change', function() {
+  document.getElementById('vat-industry-wrap').classList.toggle('hidden', !this.checked);
+});
+
+function calcVAT() {
+  var sales = parseWon(document.getElementById('vat-sales').value);
+  var purchase = parseWon(document.getElementById('vat-purchase').value);
+  var isSimple = document.getElementById('vat-simple').checked;
+  if (sales <= 0) { alert('매출액을 입력해주세요.'); return; }
+
+  var rows = [];
+  var explainText = '';
+  var consultMsg = '';
+
+  if (isSimple) {
+    var industryRate = parseInt(document.getElementById('vat-industry').value, 10);
+    var taxBase = Math.floor(sales * industryRate / 100);
+    var vat = Math.floor(taxBase * 10 / 100);
+    var purchaseDeduct = Math.floor(purchase * 5 / 1000);
+    var finalVat = Math.max(0, vat - purchaseDeduct);
+
+    rows.push(resultRow('매출액', fmtWon(sales) + '원'));
+    rows.push(resultRow('업종별 부가가치율', industryRate + '%'));
+    rows.push(resultRow('부가가치 과세표준', fmtWon(taxBase) + '원'));
+    rows.push(resultRow('산출세액 (10%)', fmtWon(vat) + '원'));
+    rows.push(resultRow('매입세액 공제', fmtWon(purchaseDeduct) + '원'));
+    rows.push(resultRow('납부세액', fmtWon(finalVat) + '원', 'total'));
+
+    explainText = '간이과세자로 매출액 ' + fmtWon(sales) + '원에 업종별 부가가치율 ' + industryRate +
+      '%를 적용한 과세표준 ' + fmtWon(taxBase) + '원에 10% 세율을 적용합니다. ' +
+      '간이과세자 신고기한: 1월 1일~1월 25일 (전년도분). ' +
+      '연 매출 4,800만원 미만이면 납부의무가 면제됩니다.';
+    consultMsg = '부가가치세 상담: 간이과세자, 매출 ' + fmtWon(sales) + '원, 납부세액 ' + fmtWon(finalVat) + '원. 절세 방법 알려주세요.';
+  } else {
+    var salesSupply = Math.floor(sales * 10 / 11);
+    var salesVat = sales - salesSupply;
+    var purchaseSupply = Math.floor(purchase * 10 / 11);
+    var purchaseVat = purchase - purchaseSupply;
+    var netVat = salesVat - purchaseVat;
+
+    rows.push(resultRow('매출 공급가액', fmtWon(salesSupply) + '원'));
+    rows.push(resultRow('매출세액 (VAT)', fmtWon(salesVat) + '원'));
+    rows.push(resultRow('매입 공급가액', fmtWon(purchaseSupply) + '원'));
+    rows.push(resultRow('매입세액 (VAT)', fmtWon(purchaseVat) + '원'));
+    if (netVat >= 0) {
+      rows.push(resultRow('납부세액', fmtWon(netVat) + '원', 'total'));
+    } else {
+      rows.push(resultRow('환급세액', fmtWon(-netVat) + '원', 'total'));
+    }
+
+    explainText = '일반과세자로 매출세액 ' + fmtWon(salesVat) + '원에서 매입세액 ' + fmtWon(purchaseVat) +
+      '원을 공제합니다. 신고기한: 1기(1~6월분) 7월 25일, 2기(7~12월분) 다음해 1월 25일.';
+    var amt = netVat >= 0 ? '납부 ' + fmtWon(netVat) : '환급 ' + fmtWon(-netVat);
+    consultMsg = '부가가치세 상담: 일반과세자, 매출 ' + fmtWon(sales) + '원, 매입 ' + fmtWon(purchase) + '원, ' + amt + '원. 절세 방법 알려주세요.';
+  }
+
+  document.getElementById('vat-result').innerHTML =
+    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg);
+}
+</script>
+</body>
+</html>

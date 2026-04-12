@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>종합소득세 계산기 - 법률 AI</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+
+<div class="page-header">
+  <button class="back-btn" onclick="location.href='calc-index.html'">← 뒤로</button>
+  <h1>종합소득세 계산기</h1>
+</div>
+
+<div class="container fade-in">
+  <div class="card">
+    <div class="form-group">
+      <label>종합소득금액 (원)</label>
+      <input type="text" id="inc-total" inputmode="numeric" placeholder="예: 80,000,000" data-comma>
+    </div>
+    <div class="form-group">
+      <label>인적공제 인원 (본인 포함)</label>
+      <select id="inc-persons">
+        <option value="1" selected>1명 (본인만)</option>
+        <option value="2">2명</option>
+        <option value="3">3명</option>
+        <option value="4">4명</option>
+        <option value="5">5명</option>
+        <option value="6">6명 이상</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="calcIncome()">계산하기</button>
+    <div id="inc-result"></div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>홈</span></a>
+  <a href="consult.html"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/></svg><span>상담</span></a>
+  <a href="calc-index.html" class="active"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 14h-2v-4H7v-2h6V7h2v4h4v2h-4v4z"/></svg><span>세금계산</span></a>
+  <a href="lawsuit.html"><svg viewBox="0 0 24 24"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg><span>소송비용</span></a>
+  <a href="docs.html"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg><span>문서작성</span></a>
+</nav>
+
+<script src="shared.js"></script>
+<script>
+setupTelegramBackButton(false);
+
+function calcIncome() {
+  var totalIncome = parseWon(document.getElementById('inc-total').value);
+  var persons = parseInt(document.getElementById('inc-persons').value, 10);
+  if (totalIncome <= 0) { alert('종합소득금액을 입력해주세요.'); return; }
+
+  var personalDeduct = 1500000 * persons;
+  var standardDeduct = 70000;
+  var totalDeduct = personalDeduct + standardDeduct;
+  var taxable = Math.max(0, totalIncome - totalDeduct);
+  var r = applyIncomeTax(taxable);
+  var localTax = Math.floor(r.tax * 10 / 100);
+
+  var rows = [
+    resultRow('종합소득금액', fmtWon(totalIncome) + '원'),
+    resultRow('인적공제 (' + persons + '명)', fmtWon(personalDeduct) + '원'),
+    resultRow('표준공제', fmtWon(standardDeduct) + '원'),
+    resultRow('소득공제 합계', fmtWon(totalDeduct) + '원'),
+    resultRow('과세표준', fmtWon(taxable) + '원'),
+    resultRow('적용 세율', r.rate + '%'),
+    resultRow('누진공제', fmtWon(r.deduct) + '원'),
+    resultRow('산출세액', fmtWon(r.tax) + '원'),
+    resultRow('지방소득세 (10%)', fmtWon(localTax) + '원'),
+    resultRow('총 세금', fmtWon(r.tax + localTax) + '원', 'total')
+  ];
+
+  var explainText = '과세표준 ' + fmtWon(taxable) + '원에 최고 ' + r.rate +
+    '% 누진세율 적용. 5월 1~31일 확정신고 기간입니다. ' +
+    '인적공제는 본인 포함 ' + persons + '명 x 150만원 = ' + fmtWon(personalDeduct) + '원이 적용되었습니다. ' +
+    '실제로는 국민연금, 건강보험, 신용카드 사용액 등 추가 공제를 통해 세액을 줄일 수 있습니다.';
+
+  var consultMsg = '종합소득세 상담: 소득 ' + fmtWon(totalIncome) + '원, 예상세액 ' + fmtWon(r.tax + localTax) + '원. 절세/공제 더 받을 수 있는 방법 알려주세요.';
+
+  document.getElementById('inc-result').innerHTML =
+    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg);
+}
+</script>
+</body>
+</html>

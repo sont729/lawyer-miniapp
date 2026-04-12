@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>월급 실수령액 계산기 - 법률 AI</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+
+<div class="page-header">
+  <button class="back-btn" onclick="location.href='calc-index.html'">← 뒤로</button>
+  <h1>월급 실수령액 계산기</h1>
+</div>
+
+<div class="container fade-in">
+  <div class="card">
+    <div class="form-group">
+      <label>급여 입력 방식</label>
+      <div class="radio-group" id="salary-type">
+        <div class="radio-pill active" onclick="setSalaryType('monthly',this)">월급</div>
+        <div class="radio-pill" onclick="setSalaryType('annual',this)">연봉</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label id="salary-label">월 급여 (원, 세전)</label>
+      <input type="text" id="sal-amount" inputmode="numeric" placeholder="예: 3,500,000" data-comma>
+    </div>
+    <div class="form-group">
+      <label>비과세 항목 (원/월)</label>
+      <input type="text" id="sal-nontax" inputmode="numeric" placeholder="200,000" value="200,000" data-comma>
+      <div class="hint">식대 등 비과세 수당 (기본 20만원)</div>
+    </div>
+    <button class="btn btn-primary" onclick="calcSalary()">계산하기</button>
+    <div id="sal-result"></div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>홈</span></a>
+  <a href="consult.html"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/></svg><span>상담</span></a>
+  <a href="calc-index.html" class="active"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 14h-2v-4H7v-2h6V7h2v4h4v2h-4v4z"/></svg><span>세금계산</span></a>
+  <a href="lawsuit.html"><svg viewBox="0 0 24 24"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg><span>소송비용</span></a>
+  <a href="docs.html"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg><span>문서작성</span></a>
+</nav>
+
+<script src="shared.js"></script>
+<script>
+setupTelegramBackButton(false);
+
+var salaryMode = 'monthly';
+
+function setSalaryType(mode, el) {
+  salaryMode = mode;
+  document.querySelectorAll('#salary-type .radio-pill').forEach(function(p) { p.classList.remove('active'); });
+  el.classList.add('active');
+  document.getElementById('salary-label').textContent = mode === 'monthly' ? '월 급여 (원, 세전)' : '연봉 (원, 세전)';
+  document.getElementById('sal-amount').placeholder = mode === 'monthly' ? '예: 3,500,000' : '예: 42,000,000';
+}
+
+function calcSalary() {
+  var rawAmount = parseWon(document.getElementById('sal-amount').value);
+  var nonTaxable = parseWon(document.getElementById('sal-nontax').value);
+  if (rawAmount <= 0) { alert('급여를 입력해주세요.'); return; }
+
+  var monthly = salaryMode === 'annual' ? Math.floor(rawAmount / 12) : rawAmount;
+  var annual = salaryMode === 'annual' ? rawAmount : monthly * 12;
+
+  // 4대 보험 (employee share)
+  var pensionBase = Math.min(monthly, 5900000);
+  var pension = Math.floor(pensionBase * 45 / 1000); // 4.5%
+  var health = Math.floor(monthly * 3545 / 100000); // 3.545%
+  var longCare = Math.floor(health * 1281 / 10000); // 12.81% of health
+  var employ = Math.floor(monthly * 9 / 1000); // 0.9%
+  var totalInsurance = pension + health + longCare + employ;
+
+  // Simplified income tax calculation
+  var taxableMonthly = Math.max(0, monthly - nonTaxable - totalInsurance);
+  var annualTaxable = taxableMonthly * 12;
+
+  // Earned income deduction
+  var earnedDeduct = 0;
+  if (annualTaxable <= 5000000) {
+    earnedDeduct = Math.floor(annualTaxable * 70 / 100);
+  } else if (annualTaxable <= 15000000) {
+    earnedDeduct = 3500000 + Math.floor((annualTaxable - 5000000) * 40 / 100);
+  } else if (annualTaxable <= 45000000) {
+    earnedDeduct = 7500000 + Math.floor((annualTaxable - 15000000) * 15 / 100);
+  } else if (annualTaxable <= 100000000) {
+    earnedDeduct = 12000000 + Math.floor((annualTaxable - 45000000) * 5 / 100);
+  } else {
+    earnedDeduct = 14750000 + Math.floor((annualTaxable - 100000000) * 2 / 100);
+  }
+
+  var annualTaxBase = Math.max(0, annualTaxable - earnedDeduct - 1500000 - 70000);
+  var r = applyIncomeTax(annualTaxBase);
+  var monthlyIncomeTax = Math.floor(r.tax / 12);
+  var monthlyLocalTax = Math.floor(monthlyIncomeTax * 10 / 100);
+  var totalDeductions = totalInsurance + monthlyIncomeTax + monthlyLocalTax;
+  var takeHome = monthly - totalDeductions;
+
+  var rows = [];
+  // Header section
+  rows.push(resultRow('급여 총액', fmtWon(monthly) + '원/월', 'section-title'));
+  if (salaryMode === 'annual') {
+    rows.push(resultRow('연봉', fmtWon(annual) + '원'));
+  }
+  rows.push(resultRow('비과세 수당', fmtWon(nonTaxable) + '원'));
+  rows.push(resultRow('', ''));
+
+  // Insurance section
+  rows.push(resultRow('4대보험 공제', '', 'section-title'));
+  rows.push(resultRow('국민연금 (4.5%)', '-' + fmtWon(pension) + '원'));
+  rows.push(resultRow('건강보험 (3.545%)', '-' + fmtWon(health) + '원'));
+  rows.push(resultRow('장기요양보험 (12.81%)', '-' + fmtWon(longCare) + '원'));
+  rows.push(resultRow('고용보험 (0.9%)', '-' + fmtWon(employ) + '원'));
+  rows.push(resultRow('4대보험 소계', '-' + fmtWon(totalInsurance) + '원'));
+  rows.push(resultRow('', ''));
+
+  // Tax section
+  rows.push(resultRow('세금 공제', '', 'section-title'));
+  rows.push(resultRow('근로소득세 (간이)', '-' + fmtWon(monthlyIncomeTax) + '원'));
+  rows.push(resultRow('지방소득세 (10%)', '-' + fmtWon(monthlyLocalTax) + '원'));
+  rows.push(resultRow('', ''));
+
+  // Total
+  rows.push(resultRow('총 공제액', '-' + fmtWon(totalDeductions) + '원'));
+  rows.push(resultRow('실수령액', fmtWon(takeHome) + '원', 'total'));
+
+  var explainText = '월 급여 ' + fmtWon(monthly) + '원에서 4대보험 ' + fmtWon(totalInsurance) +
+    '원과 세금 ' + fmtWon(monthlyIncomeTax + monthlyLocalTax) + '원 공제 후 실수령 ' + fmtWon(takeHome) + '원입니다. ' +
+    '4대보험은 사업주도 동일 부담(산재보험은 사업주 전액). ' +
+    '국민연금 상한액은 월 590만원이며, 비과세 수당(식대 등)은 소득세 계산에서 제외됩니다.';
+
+  var consultMsg = '월급 상담: 월 ' + fmtWon(monthly) + '원, 실수령 ' + fmtWon(takeHome) + '원. 절세/공제 더 받을 수 있는 방법 알려주세요.';
+
+  document.getElementById('sal-result').innerHTML =
+    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg);
+}
+</script>
+</body>
+</html>

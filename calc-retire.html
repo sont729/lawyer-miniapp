@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>퇴직소득세 계산기 - 법률 AI</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+
+<div class="page-header">
+  <button class="back-btn" onclick="location.href='calc-index.html'">← 뒤로</button>
+  <h1>퇴직소득세 계산기</h1>
+</div>
+
+<div class="container fade-in">
+  <div class="card">
+    <div class="form-group">
+      <label>퇴직금 (원)</label>
+      <input type="text" id="ret-amount" inputmode="numeric" placeholder="예: 50,000,000" data-comma>
+    </div>
+    <div class="form-group">
+      <label>근속연수 (년)</label>
+      <input type="text" id="ret-years" inputmode="numeric" placeholder="예: 10">
+    </div>
+    <button class="btn btn-primary" onclick="calcRetire()">계산하기</button>
+    <div id="ret-result"></div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>홈</span></a>
+  <a href="consult.html"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/></svg><span>상담</span></a>
+  <a href="calc-index.html" class="active"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 14h-2v-4H7v-2h6V7h2v4h4v2h-4v4z"/></svg><span>세금계산</span></a>
+  <a href="lawsuit.html"><svg viewBox="0 0 24 24"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg><span>소송비용</span></a>
+  <a href="docs.html"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg><span>문서작성</span></a>
+</nav>
+
+<script src="shared.js"></script>
+<script>
+setupTelegramBackButton(false);
+
+function calcRetire() {
+  var severance = parseWon(document.getElementById('ret-amount').value);
+  var years = parseInt(document.getElementById('ret-years').value, 10);
+  if (severance <= 0) { alert('퇴직금을 입력해주세요.'); return; }
+  if (isNaN(years) || years <= 0) { alert('근속연수를 입력해주세요.'); return; }
+
+  var deduction = 0;
+  if (years <= 5) deduction = 300000 * years;
+  else if (years <= 10) deduction = 1500000 + 500000 * (years - 5);
+  else if (years <= 20) deduction = 4000000 + 800000 * (years - 10);
+  else deduction = 12000000 + 1200000 * (years - 20);
+
+  var afterDeduct = Math.max(0, severance - deduction);
+  var converted = years > 0 ? Math.floor(afterDeduct * 12 / years) : 0;
+
+  var convertedDeduct = 0;
+  if (converted <= 8000000) convertedDeduct = converted;
+  else if (converted <= 70000000) convertedDeduct = 8000000 + Math.floor((converted - 8000000) * 60 / 100);
+  else if (converted <= 100000000) convertedDeduct = 45200000 + Math.floor((converted - 70000000) * 55 / 100);
+  else if (converted <= 300000000) convertedDeduct = 61700000 + Math.floor((converted - 100000000) * 45 / 100);
+  else convertedDeduct = 151700000 + Math.floor((converted - 300000000) * 35 / 100);
+
+  var convertedTaxable = Math.max(0, converted - convertedDeduct);
+  var r = applyIncomeTax(convertedTaxable);
+  var finalTax = Math.floor(r.tax * years / 12);
+  var localTax = Math.floor(finalTax * 10 / 100);
+
+  var rows = [
+    resultRow('퇴직금', fmtWon(severance) + '원'),
+    resultRow('근속연수', years + '년'),
+    resultRow('근속연수 공제', fmtWon(deduction) + '원'),
+    resultRow('공제 후 금액', fmtWon(afterDeduct) + '원'),
+    resultRow('환산급여', fmtWon(converted) + '원'),
+    resultRow('환산급여 공제', fmtWon(convertedDeduct) + '원'),
+    resultRow('환산 과세표준', fmtWon(convertedTaxable) + '원'),
+    resultRow('환산 산출세액', fmtWon(r.tax) + '원'),
+    resultRow('퇴직소득세', fmtWon(finalTax) + '원 (x' + years + '/12)'),
+    resultRow('지방소득세 (10%)', fmtWon(localTax) + '원'),
+    resultRow('총 세금', fmtWon(finalTax + localTax) + '원', 'total')
+  ];
+
+  var explainText = '근속연수 ' + years + '년 공제 ' + fmtWon(deduction) + '원 적용. ' +
+    '퇴직소득은 분류과세되어 다른 소득과 합산되지 않습니다. ' +
+    '환산급여(퇴직금을 12개월로 환산)에 소득세율을 적용한 후 다시 근속연수로 역산합니다. ' +
+    '퇴직금을 IRP(개인형 퇴직연금)로 받으면 퇴직소득세 납부를 연금 수령 시점까지 이연할 수 있습니다.';
+
+  var consultMsg = '퇴직소득세 상담: 퇴직금 ' + fmtWon(severance) + '원, 근속 ' + years + '년, 예상세액 ' + fmtWon(finalTax + localTax) + '원. IRP 이연 등 절세 방법 알려주세요.';
+
+  document.getElementById('ret-result').innerHTML =
+    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>소송 비용 계산기 - 법률 AI</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+
+<div class="page-header">
+  <button class="back-btn" onclick="goBack()">← 뒤로</button>
+  <h1>소송 비용 계산기</h1>
+</div>
+
+<div class="container fade-in">
+  <p class="subtitle">민사소송등인지법, 민사소송비용법 근거</p>
+  <div class="card">
+    <div class="form-group">
+      <label>소송 목적물 가액 (원)</label>
+      <input type="text" id="lit-amount" inputmode="numeric" placeholder="예: 50,000,000" data-comma>
+    </div>
+    <div class="form-group">
+      <label>당사자 수 (원고+피고)</label>
+      <select id="lit-parties">
+        <option value="2" selected>2명 (1:1)</option>
+        <option value="3">3명</option>
+        <option value="4">4명</option>
+        <option value="5">5명</option>
+        <option value="6">6명 이상</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="calcLitigation()">계산하기</button>
+    <div id="lit-result"></div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>홈</span></a>
+  <a href="consult.html"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/></svg><span>상담</span></a>
+  <a href="calc-index.html"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 14h-2v-4H7v-2h6V7h2v4h4v2h-4v4z"/></svg><span>세금계산</span></a>
+  <a href="lawsuit.html" class="active"><svg viewBox="0 0 24 24"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg><span>소송비용</span></a>
+  <a href="docs.html"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg><span>문서작성</span></a>
+</nav>
+
+<script src="shared.js"></script>
+<script>
+setupTelegramBackButton(false);
+
+function calcLitigation() {
+  var amount = parseWon(document.getElementById('lit-amount').value);
+  var parties = parseInt(document.getElementById('lit-parties').value, 10);
+  if (amount <= 0) { alert('소송 목적물 가액을 입력해주세요.'); return; }
+
+  // Stamp fee (1심 인지대)
+  var stampFee = 0;
+  if (amount <= 10000000) {
+    stampFee = Math.floor(amount * 5 / 1000);
+  } else if (amount <= 100000000) {
+    stampFee = Math.floor(amount * 45 / 10000) + 5000;
+  } else if (amount <= 1000000000) {
+    stampFee = Math.floor(amount * 4 / 1000) + 55000;
+  } else {
+    stampFee = Math.floor(amount * 35 / 10000) + 555000;
+  }
+  stampFee = Math.floor(stampFee / 1000) * 1000;
+  if (stampFee < 1000) stampFee = 1000;
+
+  // Small claims override
+  if (amount <= 30000000) {
+    var smallFees = [
+      [1000000, 2000], [2000000, 3000], [3000000, 5000],
+      [5000000, 5000], [10000000, 10000], [15000000, 15000],
+      [20000000, 15000], [25000000, 20000], [30000000, 25000]
+    ];
+    for (var i = 0; i < smallFees.length; i++) {
+      if (amount <= smallFees[i][0]) { stampFee = smallFees[i][1]; break; }
+    }
+  }
+
+  var appealStamp = Math.floor(stampFee * 15 / 10);
+  appealStamp = Math.floor(appealStamp / 1000) * 1000;
+  var cassationStamp = stampFee * 2;
+  cassationStamp = Math.floor(cassationStamp / 1000) * 1000;
+
+  var serviceFee = parties * 15 * 5200;
+
+  var lawyerMin = 0, lawyerMax = 0;
+  if (amount <= 20000000) { lawyerMin = 500000; lawyerMax = 3000000; }
+  else if (amount <= 50000000) { lawyerMin = 3000000; lawyerMax = 5000000; }
+  else if (amount <= 100000000) { lawyerMin = 5000000; lawyerMax = 10000000; }
+  else if (amount <= 300000000) { lawyerMin = 10000000; lawyerMax = 20000000; }
+  else if (amount <= 500000000) { lawyerMin = 15000000; lawyerMax = 30000000; }
+  else if (amount <= 1000000000) { lawyerMin = 20000000; lawyerMax = 50000000; }
+  else { lawyerMin = 30000000; lawyerMax = 80000000; }
+
+  var totalMin = stampFee + serviceFee;
+  var isSmall = (amount <= 30000000);
+
+  var rows = [
+    resultRow('소송 목적물 가액', fmtWon(amount) + '원'),
+    resultRow('당사자 수', parties + '명'),
+    resultRow('', ''),
+    resultRow('인지대 (1심)', fmtWon(stampFee) + '원'),
+    resultRow('인지대 (항소심, 1.5배)', fmtWon(appealStamp) + '원'),
+    resultRow('인지대 (상고심, 2배)', fmtWon(cassationStamp) + '원'),
+    resultRow('송달료', fmtWon(serviceFee) + '원'),
+    resultRow('', ''),
+    resultRow('변호사 비용 (참고)', fmtWon(lawyerMin) + ' ~ ' + fmtWon(lawyerMax) + '원'),
+    resultRow('', ''),
+    resultRow('1심 최소 비용', fmtWon(totalMin) + '원 (인지대+송달료)', 'total')
+  ];
+
+  var disclaimer = '* 인지대는 민사소송등인지법 제2조 기준. 송달료는 1회 5,200원 x 15회분 x 당사자수. 변호사 비용은 대한변호사협회 기준 참고 범위이며 실제와 다를 수 있습니다.';
+
+  var smallNote = '';
+  if (isSmall) {
+    smallNote = '<div style="background:rgba(39,174,96,0.1);border-radius:8px;padding:12px;margin-top:12px;font-size:13px;color:var(--success);font-weight:600">소액사건 (3천만원 이하): 변호사 없이 직접 소송 가능</div>';
+  }
+
+  var explainText = '청구금액 ' + fmtWon(amount) + '원 기준 민사소송등인지법 적용. ' +
+    (isSmall ? '소액사건(3천만원 이하)은 소액사건심판법에 따라 변호사 없이 직접 소송이 가능합니다. 이행권고결정 제도를 활용하면 더 빠르게 진행할 수 있습니다.' :
+    '변호사 비용은 소송 난이도, 지역, 변호사 경력에 따라 크게 달라집니다. 대한법률구조공단(132)에서 무료 법률 상담도 가능합니다.');
+
+  var consultMsg = '소송비용 상담: 청구금액 ' + fmtWon(amount) + '원, 1심 최소비용 ' + fmtWon(totalMin) + '원. 소송 절차와 승소 가능성에 대해 알려주세요.';
+
+  document.getElementById('lit-result').innerHTML =
+    resultBox(rows, disclaimer) + smallNote + explanationBox(explainText) + consultButton(consultMsg);
+}
+</script>
+</body>
+</html>
