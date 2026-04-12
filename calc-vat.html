@@ -78,19 +78,29 @@ function calcVAT() {
     var vat = Math.floor(taxBase * vatRate / 100);
     var purchaseDeduct = Math.floor(purchase * 5 / 1000);
     var finalVat = Math.max(0, vat - purchaseDeduct);
+    var exemptThreshold = getConfig('vat.simplifiedExemptThreshold', 48000000);
+
+    // 납부의무 면제 (부가가치세법 제69조)
+    var isExempt = sales < exemptThreshold;
+    if (isExempt) finalVat = 0;
 
     rows.push(resultRow('매출액', fmtWon(sales) + '원'));
     rows.push(resultRow('업종별 부가가치율', industryRate + '%'));
     rows.push(resultRow('부가가치 과세표준', fmtWon(taxBase) + '원'));
     rows.push(resultRow('산출세액 (10%)', fmtWon(vat) + '원'));
     rows.push(resultRow('매입세액 공제', fmtWon(purchaseDeduct) + '원'));
-    rows.push(resultRow('납부세액', fmtWon(finalVat) + '원', 'total'));
+    if (isExempt) {
+      rows.push(resultRow('납부의무 면제', '연 매출 ' + fmtWon(exemptThreshold) + '원 미만'));
+      rows.push(resultRow('납부세액', '0원 (면제)', 'total'));
+    } else {
+      rows.push(resultRow('납부세액', fmtWon(finalVat) + '원', 'total'));
+    }
 
-    var exemptThreshold = getConfig('vat.simplifiedExemptThreshold', 48000000);
     explainText = '간이과세자로 매출액 ' + fmtWon(sales) + '원에 업종별 부가가치율 ' + industryRate +
       '%를 적용한 과세표준 ' + fmtWon(taxBase) + '원에 ' + vatRate + '% 세율을 적용합니다. ' +
       '간이과세자 신고기한: 1월 1일~1월 25일 (전년도분). ' +
-      '연 매출 ' + fmtWon(exemptThreshold) + '원 미만이면 납부의무가 면제됩니다.';
+      (isExempt ? '연 매출 ' + fmtWon(exemptThreshold) + '원 미만이므로 납부의무가 면제됩니다.' :
+       '연 매출 ' + fmtWon(exemptThreshold) + '원 미만이면 납부의무가 면제됩니다.');
     consultMsg = '부가가치세 계산 결과로 상담 요청합니다.\n'
       + '━━━━━━━━━━━━━━\n'
       + '과세 유형: 간이과세자\n'
