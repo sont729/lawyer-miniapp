@@ -174,8 +174,22 @@ function doConsult() {
   sendToChat(message);
 }
 
+var FAQ_CODES = {
+  '전세보증금을 돌려받으려면 어떻게 해야 하나요?': 'faq_jeonse',
+  '부당해고를 당했는데 어떻게 대응해야 하나요?': 'faq_dismissal',
+  '교통사고 합의금은 어떻게 산정하나요?': 'faq_accident',
+  '이혼 시 재산분할은 어떻게 되나요?': 'faq_divorce',
+  '상속포기는 언제까지 해야 하나요?': 'faq_inherit'
+};
+
 function goConsult(question) {
-  sendToChat(question);
+  var code = FAQ_CODES[question];
+  if (tg && code) {
+    tg.openTelegramLink('https://t.me/' + BOT_USERNAME + '?start=' + code);
+    setTimeout(function() { try { tg.close(); } catch(e) {} }, 500);
+  } else {
+    sendToChat(question);
+  }
 }
 
 
@@ -218,7 +232,13 @@ var DOC_CODES = {
 };
 
 function requestDoc(docName) {
-  sendToChat(docName + ' 작성해주세요.');
+  var code = DOC_CODES[docName] || 'doc_general';
+  if (tg) {
+    tg.openTelegramLink('https://t.me/' + BOT_USERNAME + '?start=' + code);
+    setTimeout(function() { try { tg.close(); } catch(e) {} }, 500);
+  } else {
+    sendToChat(docName + ' 작성해주세요.');
+  }
 }
 
 /* ---------- Telegram Back Button ---------- */
