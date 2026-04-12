@@ -124,6 +124,7 @@ function calcLitigation() {
     '변호사 비용은 소송 난이도, 지역, 변호사 경력에 따라 크게 달라집니다. 대한법률구조공단(132)에서 무료 법률 상담도 가능합니다.');
 
   var consultMsg = '소송비용 상담: 청구금액 ' + fmtWon(amount) + '원, 1심 최소비용 ' + fmtWon(totalMin) + '원. 소송 절차와 승소 가능성에 대해 알려주세요.';
+  setConsultMsg(consultMsg);
 
   document.getElementById('lit-result').innerHTML =
     resultBox(rows, disclaimer) + smallNote + explanationBox(explainText) + consultButton(consultMsg);

@@ -96,6 +96,7 @@ function calcCRET() {
     '1세대 1주택자는 고령자 세액공제(60세 이상), 장기보유 세액공제(5년 이상) 추가 적용이 가능합니다.';
 
   var consultMsg = '종합부동산세 상담: 공시가격 ' + fmtWon(assessed) + '원, ' +
+  setConsultMsg(consultMsg);
     (houseType === '1house' ? '1세대 1주택' : '다주택') + ', 예상세액 ' + fmtWon(tax + nongSpec) + '원. 감면 방법 알려주세요.';
 
   document.getElementById('cret-result').innerHTML =

@@ -88,6 +88,7 @@ function calcRetire() {
     '퇴직금을 IRP(개인형 퇴직연금)로 받으면 퇴직소득세 납부를 연금 수령 시점까지 이연할 수 있습니다.';
 
   var consultMsg = '퇴직소득세 상담: 퇴직금 ' + fmtWon(severance) + '원, 근속 ' + years + '년, 예상세액 ' + fmtWon(finalTax + localTax) + '원. IRP 이연 등 절세 방법 알려주세요.';
+  setConsultMsg(consultMsg);
 
   document.getElementById('ret-result').innerHTML =
     resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg);

@@ -135,6 +135,7 @@ function calcAcquire() {
     '농어촌특별세와 지방교육세가 부가되어 실제 부담액은 취득세보다 높습니다.';
 
   var consultMsg = '취득세 상담: ' + typeLabel + ' ' + fmtWon(price) + '원 취득, 총 세금 ' + fmtWon(total) + '원. 감면 가능한지 알려주세요.';
+  setConsultMsg(consultMsg);
 
   document.getElementById('acq-result').innerHTML =
     resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg);

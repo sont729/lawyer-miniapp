@@ -134,6 +134,7 @@ function calcSalary() {
     '국민연금 상한액은 월 590만원이며, 비과세 수당(식대 등)은 소득세 계산에서 제외됩니다.';
 
   var consultMsg = '월급 상담: 월 ' + fmtWon(monthly) + '원, 실수령 ' + fmtWon(takeHome) + '원. 절세/공제 더 받을 수 있는 방법 알려주세요.';
+  setConsultMsg(consultMsg);
 
   document.getElementById('sal-result').innerHTML =
     resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg);

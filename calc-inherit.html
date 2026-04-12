@@ -97,8 +97,22 @@ function calcInherit() {
     '기본공제(' + fmtWon(basicDeduct) + '원)와 자녀공제(' + fmtWon(childDeduct) + '원)의 합이 일괄공제(' + fmtWon(lumpSum) + '원)보다 ' +
     (itemizedTotal >= lumpSum ? '크므로 항목별 공제가' : '작으므로 일괄공제가') + ' 적용되었습니다.';
 
-  var consultMsg = '상속세 상담: 상속재산 ' + fmtWon(estate) + '원, ' +
-    (spouseAlive ? '배우자 생존, ' : '') + '자녀 ' + numChildren + '명, 예상세액 ' + fmtWon(r.tax) + '원. 절세 방법 알려주세요.';
+  var consultMsg = '상속세 계산 결과로 상담 요청합니다.\n'
+  setConsultMsg(consultMsg);
+    + '━━━━━━━━━━━━━━\n'
+    + '상속재산: ' + fmtWon(estate) + '원\n'
+    + '기본공제: ' + fmtWon(basicDeduct) + '원\n'
+    + '자녀공제 (' + numChildren + '명): ' + fmtWon(childDeduct) + '원\n'
+    + '일괄공제: ' + fmtWon(lumpSum) + '원\n'
+    + '적용 인적공제: ' + fmtWon(personalDeduct) + '원\n'
+    + (spouseAlive ? '배우자 공제: ' + fmtWon(spouseDeduct) + '원\n' : '')
+    + '장례비 공제: ' + fmtWon(funeralDeduct) + '원\n'
+    + '총 공제: ' + fmtWon(totalDeduct) + '원\n'
+    + '과세표준: ' + fmtWon(taxable) + '원\n'
+    + '세율: ' + r.rate + '% (누진공제 ' + fmtWon(r.deduct) + '원)\n'
+    + '산출세액: ' + fmtWon(r.tax) + '원\n'
+    + '━━━━━━━━━━━━━━\n'
+    + '절세 방법이나 추가 공제가 가능한지 알려주세요.';
 
   document.getElementById('inh-result').innerHTML =
     resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg);

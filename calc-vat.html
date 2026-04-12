@@ -68,6 +68,7 @@ function calcVAT() {
   var rows = [];
   var explainText = '';
   var consultMsg = '';
+  setConsultMsg(consultMsg);
 
   if (isSimple) {
     var industryRate = parseInt(document.getElementById('vat-industry').value, 10);

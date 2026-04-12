@@ -122,21 +122,24 @@ function explanationBox(text) {
     '<div class="explain-body">' + text + '</div></div>';
 }
 
+var _consultMsg = '';
 function consultButton(message) {
-  return '<button class="btn-consult" onclick="consultAbout(\'' + message.replace(/'/g, "\\'").replace(/\n/g, ' ') + '\')">이 내용으로 상담하기</button>';
+  return '<button class="btn-consult" onclick="doConsult()">💬 이 내용으로 상담하기</button>';
 }
 
-/* ---------- Consult Handler ---------- */
-function consultAbout(message) {
+function setConsultMsg(msg) { _consultMsg = msg; }
+
+function doConsult() {
+  var message = _consultMsg;
+  if (!message) { alert('먼저 계산을 실행해주세요.'); return; }
   if (tg) {
     tg.sendData(JSON.stringify({type: 'consult', text: message}));
   } else {
     // 브라우저에서 열었을 때 — 클립보드 복사 후 안내
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(message).then(function() {
-        alert('상담 내용이 클립보드에 복사되었습니다.\n텔레그램 봇 채팅에 붙여넣기 하세요.\n\n' + message);
-      });
-    } else {
+    try {
+      navigator.clipboard.writeText(message);
+      alert('📋 상담 내용이 클립보드에 복사되었습니다!\n텔레그램 봇 채팅에 붙여넣기 하세요.');
+    } catch(e) {
       prompt('아래 내용을 복사해서 텔레그램 봇에 붙여넣기 하세요:', message);
     }
   }
