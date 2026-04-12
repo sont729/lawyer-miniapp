@@ -127,12 +127,12 @@ var BOT_USERNAME = 'onda_lawyer_bot';
 
 function sendToChat(message) {
   if (tg) {
-    // 텔레그램: 딥링크로 봇 채팅에 메시지 전달
-    var encoded = encodeURIComponent(message);
-    tg.openTelegramLink('https://t.me/' + BOT_USERNAME + '?start=' + encoded.substring(0, 256));
-    tg.close();
+    // 텔레그램: 딥링크로 봇 채팅 열기 + 클립보드에 메시지 복사
+    // start 파라미터는 영문만 가능하므로, 한글 메시지는 클립보드로
+    try { navigator.clipboard.writeText(message); } catch(e) {}
+    tg.openTelegramLink('https://t.me/' + BOT_USERNAME);
+    setTimeout(function() { tg.close(); }, 300);
   } else {
-    // 브라우저: 텍스트 복사 안내
     var ta = document.createElement('textarea');
     ta.value = message;
     document.body.appendChild(ta);
@@ -180,8 +180,44 @@ function goChat() {
 }
 
 
+var DOC_CODES = {
+  '내용증명': 'doc_content_cert',
+  '고소장': 'doc_complaint',
+  '민사소장': 'doc_civil',
+  '합의서': 'doc_settlement',
+  '근로계약서': 'doc_labor',
+  '차용증': 'doc_loan',
+  '진정서': 'doc_petition',
+  '이의신청서': 'doc_objection',
+  '위임장': 'doc_poa',
+  '사직서': 'doc_resign',
+  '경위서': 'doc_incident',
+  '상속포기신고서': 'doc_inherit_waiver',
+  '부당해고구제신청서': 'doc_unfair_dismiss',
+  'NDA (비밀유지계약서)': 'doc_nda',
+  '업무위탁계약서': 'doc_service',
+  '분납요청서': 'doc_installment',
+  '각서': 'doc_pledge',
+  '고소취하서': 'doc_withdraw',
+  '답변서': 'doc_answer',
+  '임대차계약서': 'doc_lease',
+  '이혼합의서': 'doc_divorce'
+};
+
 function requestDoc(docName) {
-  sendToChat(docName + ' 작성해주세요.');
+  var code = DOC_CODES[docName] || 'doc_general';
+  if (tg) {
+    tg.openTelegramLink('https://t.me/' + BOT_USERNAME + '?start=' + code);
+    tg.close();
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = docName + ' 작성해주세요.';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    alert('📋 "' + docName + ' 작성해주세요"가 복사되었습니다!\n텔레그램 봇 채팅에 붙여넣기 하세요.');
+  }
 }
 
 /* ---------- Telegram Back Button ---------- */
