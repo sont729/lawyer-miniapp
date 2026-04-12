@@ -32,6 +32,17 @@
       <input type="text" id="sal-nontax" inputmode="numeric" placeholder="200,000" value="200,000" data-comma>
       <div class="hint">식대 등 비과세 수당 (기본 20만원)</div>
     </div>
+    <div class="form-group">
+      <label>부양가족 수 (본인 포함)</label>
+      <select id="sal-dependents">
+        <option value="1" selected>1명 (본인만)</option>
+        <option value="2">2명</option>
+        <option value="3">3명</option>
+        <option value="4">4명</option>
+        <option value="5">5명 이상</option>
+      </select>
+      <div class="hint">배우자·자녀 등 부양가족이 많을수록 세금이 줄어듭니다</div>
+    </div>
     <button class="btn btn-primary" onclick="calcSalary()">계산하기</button>
     <div id="sal-result"></div>
   </div>
@@ -75,7 +86,8 @@ function calcSalary() {
   var longCareFrac = cfg ? cfg.longTermCare.rateFraction : [1295, 10000];
   var employFrac = cfg ? cfg.employmentInsurance.rateFraction : [9, 1000];
 
-  var pensionBase = Math.min(monthly, pensionCap);
+  var pensionFloor = 390000; // 국민연금 하한액
+  var pensionBase = Math.max(pensionFloor, Math.min(monthly, pensionCap));
   var pension = Math.floor(pensionBase * pensionFrac[0] / pensionFrac[1]);
   var health = Math.floor(monthly * healthFrac[0] / healthFrac[1]);
   var longCare = Math.floor(health * longCareFrac[0] / longCareFrac[1]);
@@ -114,7 +126,8 @@ function calcSalary() {
     }
   }
 
-  var personalDeductAmt = getConfig('incomeTax.personalDeductionPerPerson', 1500000);
+  var dependents = parseInt(document.getElementById('sal-dependents').value, 10) || 1;
+  var personalDeductAmt = getConfig('incomeTax.personalDeductionPerPerson', 1500000) * dependents;
   var annualTaxBase = Math.max(0, annualTaxable - earnedDeduct - personalDeductAmt);
   var r = applyIncomeTax(annualTaxBase);
   var stdTaxCredit = getConfig('incomeTax.standardTaxCredit', 70000);
