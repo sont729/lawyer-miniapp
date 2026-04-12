@@ -86,7 +86,7 @@ function calcSalary() {
   var longCareFrac = cfg ? cfg.longTermCare.rateFraction : [1295, 10000];
   var employFrac = cfg ? cfg.employmentInsurance.rateFraction : [9, 1000];
 
-  var pensionFloor = 390000; // 국민연금 하한액
+  var pensionFloor = 400000; // 국민연금 하한액 (2025.7~2026.6)
   var pensionBase = Math.max(pensionFloor, Math.min(monthly, pensionCap));
   var pension = Math.floor(pensionBase * pensionFrac[0] / pensionFrac[1]);
   var health = Math.floor(monthly * healthFrac[0] / healthFrac[1]);

@@ -207,7 +207,7 @@
     "effectiveYear": 2024,
     "generalRate": 10,
     "simplifiedThreshold": 104000000,
-    "simplifiedExemptThreshold": 104000000,
+    "simplifiedExemptThreshold": 48000000,
     "industryRates": {
       "retail": 15,
       "manufacturing": 20,

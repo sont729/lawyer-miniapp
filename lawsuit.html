@@ -87,9 +87,9 @@ function calcLitigation() {
   var appealMult = litCfg ? litCfg.appealMultiplier : 1.5;
   var cassationMult = litCfg ? litCfg.cassationMultiplier : 2.0;
   var appealStamp = Math.floor(stampFee * appealMult);
-  appealStamp = Math.floor(appealStamp / 1000) * 1000;
+  if (appealStamp >= 1000) appealStamp = Math.floor(appealStamp / 100) * 100;
   var cassationStamp = Math.floor(stampFee * cassationMult);
-  cassationStamp = Math.floor(cassationStamp / 1000) * 1000;
+  if (cassationStamp >= 1000) cassationStamp = Math.floor(cassationStamp / 100) * 100;
 
   var serviceFeePerSend = litCfg ? litCfg.serviceFeePerSend : 5200;
   var sendsPerParty = litCfg ? litCfg.sendsPerParty : 15;
