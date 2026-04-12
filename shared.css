@@ -141,6 +141,15 @@ select{
   color:#fff;transition:opacity 0.15s;
 }
 .btn-consult:active{opacity:0.85}
+.consult-area{margin-top:16px}
+.consult-input{
+  width:100%;padding:12px;border:1.5px solid rgba(0,0,0,0.12);
+  border-radius:var(--radius-sm);font-size:14px;background:#ffffff;
+  color:var(--text);outline:none;margin-bottom:8px;
+  transition:border-color 0.2s;
+}
+.consult-input:focus{border-color:var(--success)}
+.consult-input::placeholder{color:#bbb}
 
 /* ===== RESULTS ===== */
 .result-box{

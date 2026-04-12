@@ -124,7 +124,10 @@ function explanationBox(text) {
 
 var _consultMsg = '';
 function consultButton(message) {
-  return '<button class="btn-consult" onclick="doConsult()">💬 이 내용으로 상담하기</button>';
+  return '<div class="consult-area">'
+    + '<input type="text" id="consult-input" class="consult-input" placeholder="추가로 궁금한 점을 적어주세요 (선택)" />'
+    + '<button class="btn-consult" onclick="doConsult()">💬 이 내용으로 상담하기</button>'
+    + '</div>';
 }
 
 function setConsultMsg(msg) { _consultMsg = msg; }
@@ -132,6 +135,10 @@ function setConsultMsg(msg) { _consultMsg = msg; }
 function doConsult() {
   var message = _consultMsg;
   if (!message) { alert('먼저 계산을 실행해주세요.'); return; }
+  var userQ = document.getElementById('consult-input');
+  if (userQ && userQ.value.trim()) {
+    message += '\n\n추가 질문: ' + userQ.value.trim();
+  }
   if (tg) {
     tg.sendData(JSON.stringify({type: 'consult', text: message}));
   } else {
