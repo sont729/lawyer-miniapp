@@ -171,6 +171,7 @@ select{
 .result-row.section-title{border-bottom:none;padding-bottom:0}
 .result-row.section-title .label{color:#1a1a1a;font-weight:700;font-size:13px}
 .disclaimer{font-size:11px;color:#888;margin-top:12px;line-height:1.5}
+.law-ref{font-size:11px;color:#2AABEE;margin-top:8px;font-weight:500}
 
 /* ===== EXPLANATION BOX ===== */
 .explain-box{

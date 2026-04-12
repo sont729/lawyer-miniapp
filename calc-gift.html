@@ -48,10 +48,11 @@
 <script>
 setupTelegramBackButton(false);
 
-var GIFT_DEDUCTIONS = {
+var GIFT_DEDUCTIONS_DEFAULT = {
   spouse: 600000000, child: 50000000, child_minor: 20000000,
   parent: 50000000, relative: 10000000, other: 0
 };
+var GIFT_DEDUCTIONS = TAX_CONFIG ? TAX_CONFIG.giftTax.deductions : GIFT_DEDUCTIONS_DEFAULT;
 var GIFT_REL_LABELS = {
   spouse: '배우자', child: '성년 자녀', child_minor: '미성년 자녀',
   parent: '부모', relative: '기타 친족', other: '타인'
@@ -95,7 +96,7 @@ function calcGift() {
     + '절세 방법이나 추가 공제가 가능한지 알려주세요.';
 
   document.getElementById('gift-result').innerHTML =
-    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg, startCode);
+    resultBox(rows, undefined, getLawRef('giftTax')) + explanationBox(explainText) + consultButton(consultMsg, startCode);
 }
 </script>
 </body>

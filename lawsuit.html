@@ -53,16 +53,29 @@ function calcLitigation() {
   var parties = parseInt(document.getElementById('lit-parties').value, 10);
   if (amount <= 0) { alert('소송 목적물 가액을 입력해주세요.'); return; }
 
-  // Stamp fee (1심 인지대)
+  // Stamp fee (1심 인지대) - from config with fallback
+  var litCfg = TAX_CONFIG ? TAX_CONFIG.litigationCost : null;
+  var stampBrackets = litCfg ? litCfg.stampFeeBrackets : null;
   var stampFee = 0;
-  if (amount <= 10000000) {
-    stampFee = Math.floor(amount * 5 / 1000);
-  } else if (amount <= 100000000) {
-    stampFee = Math.floor(amount * 45 / 10000) + 5000;
-  } else if (amount <= 1000000000) {
-    stampFee = Math.floor(amount * 4 / 1000) + 55000;
+  if (stampBrackets) {
+    for (var si = 0; si < stampBrackets.length; si++) {
+      var sb = stampBrackets[si];
+      var sbLimit = sb.limit || Infinity;
+      if (amount <= sbLimit) {
+        stampFee = Math.floor(amount * sb.rateNum / sb.rateDen) + sb.add;
+        break;
+      }
+    }
   } else {
-    stampFee = Math.floor(amount * 35 / 10000) + 555000;
+    if (amount <= 10000000) {
+      stampFee = Math.floor(amount * 5 / 1000);
+    } else if (amount <= 100000000) {
+      stampFee = Math.floor(amount * 45 / 10000) + 5000;
+    } else if (amount <= 1000000000) {
+      stampFee = Math.floor(amount * 4 / 1000) + 55000;
+    } else {
+      stampFee = Math.floor(amount * 35 / 10000) + 555000;
+    }
   }
   stampFee = Math.floor(stampFee / 1000) * 1000;
   if (stampFee < 1000) stampFee = 1000;
@@ -79,12 +92,16 @@ function calcLitigation() {
     }
   }
 
-  var appealStamp = Math.floor(stampFee * 15 / 10);
+  var appealMult = litCfg ? litCfg.appealMultiplier : 1.5;
+  var cassationMult = litCfg ? litCfg.cassationMultiplier : 2.0;
+  var appealStamp = Math.floor(stampFee * appealMult);
   appealStamp = Math.floor(appealStamp / 1000) * 1000;
-  var cassationStamp = stampFee * 2;
+  var cassationStamp = Math.floor(stampFee * cassationMult);
   cassationStamp = Math.floor(cassationStamp / 1000) * 1000;
 
-  var serviceFee = parties * 15 * 5200;
+  var serviceFeePerSend = litCfg ? litCfg.serviceFeePerSend : 5200;
+  var sendsPerParty = litCfg ? litCfg.sendsPerParty : 15;
+  var serviceFee = parties * sendsPerParty * serviceFeePerSend;
 
   var lawyerMin = 0, lawyerMax = 0;
   if (amount <= 20000000) { lawyerMin = 500000; lawyerMax = 3000000; }
@@ -112,7 +129,7 @@ function calcLitigation() {
     resultRow('1심 최소 비용', fmtWon(totalMin) + '원 (인지대+송달료)', 'total')
   ];
 
-  var disclaimer = '* 인지대는 민사소송등인지법 제2조 기준. 송달료는 1회 5,200원 x 15회분 x 당사자수. 변호사 비용은 대한변호사협회 기준 참고 범위이며 실제와 다를 수 있습니다.';
+  var disclaimer = '* 인지대는 민사소송등인지법 제2조 기준. 송달료는 1회 ' + fmtWon(serviceFeePerSend) + '원 x ' + sendsPerParty + '회분 x 당사자수. 변호사 비용은 대한변호사협회 기준 참고 범위이며 실제와 다를 수 있습니다.';
 
   var smallNote = '';
   if (isSmall) {
@@ -138,7 +155,7 @@ function calcLitigation() {
     + '소송 절차와 승소 가능성에 대해 알려주세요.';
 
   document.getElementById('lit-result').innerHTML =
-    resultBox(rows, disclaimer) + smallNote + explanationBox(explainText) + consultButton(consultMsg, startCode);
+    resultBox(rows, disclaimer, getLawRef('litigationCost')) + smallNote + explanationBox(explainText) + consultButton(consultMsg, startCode);
 }
 </script>
 </body>

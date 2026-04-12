@@ -49,35 +49,63 @@ function calcCRET() {
   var houseType = document.getElementById('cret-type').value;
   if (assessed <= 0) { alert('공시가격을 입력해주세요.'); return; }
 
-  var fairRatio = 60;
-  var baseDeduct = (houseType === '1house') ? 1200000000 : 900000000;
+  var cretCfg = TAX_CONFIG ? TAX_CONFIG.comprehensiveRealEstateTax : null;
+  var fairRatio = cretCfg ? cretCfg.fairMarketRatio : 60;
+  var oneHouseBase = cretCfg ? cretCfg.baseDeduction.oneHouse : 1200000000;
+  var multiHouseBase = cretCfg ? cretCfg.baseDeduction.multiHouse : 900000000;
+  var baseDeduct = (houseType === '1house') ? oneHouseBase : multiHouseBase;
   // 종부세법: (공시가격 - 기본공제) × 공정시장가액비율
   var afterDeduct = Math.max(0, assessed - baseDeduct);
   var taxable = Math.floor(afterDeduct * fairRatio / 100);
 
+  var rateBrackets = cretCfg ? (houseType === '1house' ? cretCfg.oneHouseRates : cretCfg.multiHouseRates) : null;
   var rate = 0, progDeduct = 0;
-  if (houseType === '1house') {
-    if (taxable <= 300000000) { rate = 50; progDeduct = 0; }
-    else if (taxable <= 600000000) { rate = 70; progDeduct = 600000; }
-    else if (taxable <= 1200000000) { rate = 100; progDeduct = 2400000; }
-    else if (taxable <= 2500000000) { rate = 130; progDeduct = 6000000; }
-    else if (taxable <= 5000000000) { rate = 150; progDeduct = 11000000; }
-    else { rate = 200; progDeduct = 36000000; }
+  if (rateBrackets) {
+    var prevLimit = 0;
+    for (var ci = 0; ci < rateBrackets.length; ci++) {
+      var cb = rateBrackets[ci];
+      var cbLimit = cb.limit || Infinity;
+      if (taxable <= cbLimit) {
+        rate = Math.round(cb.rate * 100);
+        // Calculate progressive deduction from bracket data
+        if (ci === 0) {
+          progDeduct = 0;
+        } else {
+          progDeduct = 0;
+          for (var pi = 0; pi < ci; pi++) {
+            var pBracket = rateBrackets[pi];
+            var pPrev = pi > 0 ? (rateBrackets[pi - 1].limit || 0) : 0;
+            var pWidth = (pBracket.limit || 0) - pPrev;
+            progDeduct += Math.floor(pWidth * (cb.rate - pBracket.rate) / 100);
+          }
+        }
+        break;
+      }
+    }
   } else {
-    if (taxable <= 300000000) { rate = 50; progDeduct = 0; }
-    else if (taxable <= 600000000) { rate = 70; progDeduct = 600000; }
-    else if (taxable <= 1200000000) { rate = 100; progDeduct = 2400000; }
-    else if (taxable <= 2500000000) { rate = 130; progDeduct = 6000000; }
-    else if (taxable <= 5000000000) { rate = 150; progDeduct = 11000000; }
-    else if (taxable <= 9400000000) { rate = 200; progDeduct = 36000000; }
-    else { rate = 270; progDeduct = 101800000; }
+    if (houseType === '1house') {
+      if (taxable <= 300000000) { rate = 50; progDeduct = 0; }
+      else if (taxable <= 600000000) { rate = 70; progDeduct = 600000; }
+      else if (taxable <= 1200000000) { rate = 100; progDeduct = 2400000; }
+      else if (taxable <= 2500000000) { rate = 130; progDeduct = 6000000; }
+      else if (taxable <= 5000000000) { rate = 150; progDeduct = 11000000; }
+      else { rate = 200; progDeduct = 36000000; }
+    } else {
+      if (taxable <= 300000000) { rate = 50; progDeduct = 0; }
+      else if (taxable <= 600000000) { rate = 70; progDeduct = 600000; }
+      else if (taxable <= 1200000000) { rate = 100; progDeduct = 2400000; }
+      else if (taxable <= 2500000000) { rate = 130; progDeduct = 6000000; }
+      else if (taxable <= 5000000000) { rate = 150; progDeduct = 11000000; }
+      else if (taxable <= 9400000000) { rate = 200; progDeduct = 36000000; }
+      else { rate = 270; progDeduct = 101800000; }
+    }
   }
 
   var tax = Math.floor(taxable * rate / 10000) - progDeduct;
   if (tax < 0) tax = 0;
   var nongSpec = Math.floor(tax * 20 / 100);
 
-  var baseLabel = houseType === '1house' ? '12억 (1세대 1주택)' : '9억 (다주택)';
+  var baseLabel = houseType === '1house' ? fmtWon(oneHouseBase) + ' (1세대 1주택)' : fmtWon(multiHouseBase) + ' (다주택)';
 
   var rows = [
     resultRow('공시가격 합계', fmtWon(assessed) + '원'),
@@ -113,7 +141,7 @@ function calcCRET() {
     + '감면 방법 알려주세요.';
 
   document.getElementById('cret-result').innerHTML =
-    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg, startCode);
+    resultBox(rows, undefined, getLawRef('comprehensiveRealEstateTax')) + explanationBox(explainText) + consultButton(consultMsg, startCode);
 }
 </script>
 </body>

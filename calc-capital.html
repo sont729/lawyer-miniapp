@@ -126,23 +126,41 @@ function calcCapGains() {
       + '양도소득세: 0원\n'
       + '━━━━━━━━━━━━━━\n'
       + '다른 절세 방법이 있는지 알려주세요.';
-    document.getElementById('cg-result').innerHTML = resultBox(rows) + explanationBox(explainParts.join(' ')) + consultButton(consultMsg, startCode);
+    document.getElementById('cg-result').innerHTML = resultBox(rows, undefined, getLawRef('capitalGainsTax')) + explanationBox(explainParts.join(' ')) + consultButton(consultMsg, startCode);
     return;
   }
 
   var is1house = (household === '1household1house');
   var totalTax = 0;
 
-  // 조정대상지역 거주 요건: 2017.8.3 이후 취득 시 2년 거주 필요
+  // Config values for capital gains tax
+  var cgCfg = TAX_CONFIG ? TAX_CONFIG.capitalGainsTax : null;
+  var oneHouseExemptLimit = cgCfg ? cgCfg.oneHouseExemptionLimit : 1200000000;
+  var cgBasicDeduct = cgCfg ? cgCfg.basicDeduction : 2500000;
+  var shortRateUnder1 = cgCfg ? cgCfg.shortTermRates.under1Year : 70;
+  var shortRateUnder2 = cgCfg ? cgCfg.shortTermRates.under2Years : 60;
+  var ltGenRatePerYear = cgCfg ? cgCfg.longTermGeneral.ratePerYear : 2;
+  var ltGenMaxRate = cgCfg ? cgCfg.longTermGeneral.maxRate : 30;
+  var lt1hHoldPerYear = cgCfg ? cgCfg.longTerm1House.holdingRatePerYear : 4;
+  var lt1hHoldMax = cgCfg ? cgCfg.longTerm1House.holdingMaxRate : 40;
+  var lt1hResPerYear = cgCfg ? cgCfg.longTerm1House.residenceRatePerYear : 4;
+  var lt1hResMax = cgCfg ? cgCfg.longTerm1House.residenceMaxRate : 40;
+  var multiSurcharge2 = cgCfg ? cgCfg.multiHouseSurcharge.twoHouses : 20;
+  var multiSurcharge3 = cgCfg ? cgCfg.multiHouseSurcharge.threeOrMore : 30;
+  var surchargeExemptEndStr = cgCfg ? cgCfg.multiHouseSurcharge.exemptionEnd : '2026-05-09';
+  var adjAreaDate = cgCfg ? cgCfg.residenceRequirement.adjustmentAreaDate : '2017-08-03';
+  var adjReqYears = cgCfg ? cgCfg.residenceRequirement.requiredYears : 2;
+
+  // 조정대상지역 거주 요건
   var isAdjust = document.getElementById('cg-adjust').checked;
   var resStart = document.getElementById('cg-res-start').value.trim();
   var resEnd = document.getElementById('cg-res-end').value.trim();
   var resYearsForExempt = (resStart && resEnd) ? dateDiffYears(resStart, resEnd) : 0;
-  var needsResidence = isAdjust && acqDate >= '2017-08-03';
-  var meetsResidence = !needsResidence || resYearsForExempt >= 2;
+  var needsResidence = isAdjust && acqDate >= adjAreaDate;
+  var meetsResidence = !needsResidence || resYearsForExempt >= adjReqYears;
 
   if (is1house && holdYears >= 2 && meetsResidence) {
-    if (tfPrice <= 1200000000) {
+    if (tfPrice <= oneHouseExemptLimit) {
       var exemptNote = needsResidence ? ' (2년 보유 + 2년 거주, 12억 이하)' : ' (2년 이상 보유, 12억 이하)';
       rows.push(resultRow('비과세', '1세대 1주택 비과세' + exemptNote));
       rows.push(resultRow('양도소득세', '0원', 'total'));
@@ -158,11 +176,11 @@ function calcCapGains() {
         + '양도소득세: 0원\n'
         + '━━━━━━━━━━━━━━\n'
         + '다른 세금 이슈가 있는지 확인해주세요.';
-      document.getElementById('cg-result').innerHTML = resultBox(rows) + explanationBox(explainParts.join(' ')) + consultButton(consultMsg, startCode);
+      document.getElementById('cg-result').innerHTML = resultBox(rows, undefined, getLawRef('capitalGainsTax')) + explanationBox(explainParts.join(' ')) + consultButton(consultMsg, startCode);
       return;
     }
-    var taxableGain = Math.floor(gain * (tfPrice - 1200000000) / tfPrice);
-    var pct = Math.round((tfPrice - 1200000000) * 100 / tfPrice);
+    var taxableGain = Math.floor(gain * (tfPrice - oneHouseExemptLimit) / tfPrice);
+    var pct = Math.round((tfPrice - oneHouseExemptLimit) * 100 / tfPrice);
     rows.push(resultRow('12억 초과분 과세', '양도차익의 ' + pct + '%'));
     gain = taxableGain;
     rows.push(resultRow('과세 양도차익', fmtWon(gain) + '원'));
@@ -171,17 +189,17 @@ function calcCapGains() {
 
   var ltRate = 0;
   if (is1house && holdYears >= 3) {
-    var holdRate = Math.min(holdYears * 4, 40);
+    var holdRate = Math.min(holdYears * lt1hHoldPerYear, lt1hHoldMax);
     var resYears = 0;
     if (resStart && resEnd) resYears = dateDiffYears(resStart, resEnd);
-    var resRate = Math.min(resYears * 4, 40);
+    var resRate = Math.min(resYears * lt1hResPerYear, lt1hResMax);
     ltRate = holdRate + resRate;
     rows.push(resultRow('보유공제율', holdRate + '% (보유 ' + holdYears + '년)'));
     if (resYears > 0) rows.push(resultRow('거주공제율', resRate + '% (거주 ' + resYears + '년)'));
     rows.push(resultRow('장기보유특별공제율', ltRate + '%'));
     explainParts.push('1세대 1주택 장기보유특별공제: 보유 ' + holdRate + '% + 거주 ' + resRate + '% = ' + ltRate + '% 적용.');
   } else if (!is1house && holdYears >= 3) {
-    ltRate = Math.min(holdYears * 2, 30);
+    ltRate = Math.min(holdYears * ltGenRatePerYear, ltGenMaxRate);
     rows.push(resultRow('장기보유특별공제율', ltRate + '% (보유 ' + holdYears + '년)'));
     explainParts.push('일반 장기보유특별공제 ' + ltRate + '% 적용 (연 2%, 최대 30%).');
   }
@@ -193,27 +211,27 @@ function calcCapGains() {
   }
 
   var afterLt = gain - ltDeduction;
-  var basicDeduct = 2500000;
+  var basicDeduct = cgBasicDeduct;
   var taxable = Math.max(0, afterLt - basicDeduct);
   rows.push(resultRow('기본공제', fmtWon(basicDeduct) + '원'));
   rows.push(resultRow('과세표준', fmtWon(taxable) + '원'));
 
   var finalTax = 0;
   if (holdDays < 365) {
-    finalTax = Math.floor(taxable * 70 / 100);
-    rows.push(resultRow('단기 보유 세율', '70% (1년 미만)'));
-    explainParts.push('1년 미만 보유로 70% 단기 세율이 적용됩니다 (2021년 개정).');
+    finalTax = Math.floor(taxable * shortRateUnder1 / 100);
+    rows.push(resultRow('단기 보유 세율', shortRateUnder1 + '% (1년 미만)'));
+    explainParts.push('1년 미만 보유로 ' + shortRateUnder1 + '% 단기 세율이 적용됩니다 (2021년 개정).');
   } else if (holdDays < 730) {
-    finalTax = Math.floor(taxable * 60 / 100);
-    rows.push(resultRow('단기 보유 세율', '60% (2년 미만)'));
-    explainParts.push('2년 미만 보유로 60% 단기 세율이 적용됩니다 (2021년 개정).');
+    finalTax = Math.floor(taxable * shortRateUnder2 / 100);
+    rows.push(resultRow('단기 보유 세율', shortRateUnder2 + '% (2년 미만)'));
+    explainParts.push('2년 미만 보유로 ' + shortRateUnder2 + '% 단기 세율이 적용됩니다 (2021년 개정).');
   } else {
     var tfDateObj = new Date(tfDate);
-    var surchargeExemptEnd = new Date('2026-05-09');
+    var surchargeExemptEnd = new Date(surchargeExemptEndStr);
     var surcharge = 0;
     if (isAdjust && tfDateObj > surchargeExemptEnd) {
-      if (household === '2houses') surcharge = 20;
-      else if (household === '3plus') surcharge = 30;
+      if (household === '2houses') surcharge = multiSurcharge2;
+      else if (household === '3plus') surcharge = multiSurcharge3;
     }
 
     var r = applyIncomeTax(taxable);
@@ -256,7 +274,7 @@ function calcCapGains() {
     + '비과세/감면 가능한지 알려주세요.';
 
   document.getElementById('cg-result').innerHTML =
-    resultBox(rows) + explanationBox(explainParts.join(' ')) + consultButton(consultMsg, startCode);
+    resultBox(rows, undefined, getLawRef('capitalGainsTax')) + explanationBox(explainParts.join(' ')) + consultButton(consultMsg, startCode);
 }
 </script>
 </body>

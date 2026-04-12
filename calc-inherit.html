@@ -63,15 +63,18 @@ function calcInherit() {
   var funeral = parseWon(document.getElementById('inh-funeral').value);
   if (estate <= 0) { alert('상속재산을 입력해주세요.'); return; }
 
-  var funeralDeduct = Math.min(funeral, 15000000);
+  var funeralMax = getConfig('inheritanceTax.funeralCostMax', 15000000);
+  var funeralDeduct = Math.min(funeral, funeralMax);
   if (funeral === 0) funeralDeduct = 5000000;
 
-  var basicDeduct = 200000000;
-  var childDeduct = 50000000 * numChildren;
+  var basicDeduct = getConfig('inheritanceTax.basicDeduction', 200000000);
+  var childDeductPer = getConfig('inheritanceTax.childDeductionPer', 50000000);
+  var childDeduct = childDeductPer * numChildren;
   var itemizedTotal = basicDeduct + childDeduct;
-  var lumpSum = 500000000;
+  var lumpSum = getConfig('inheritanceTax.lumpSumDeduction', 500000000);
   var personalDeduct = Math.max(itemizedTotal, lumpSum);
-  var spouseDeduct = spouseAlive ? 500000000 : 0;
+  var spouseDeductAmt = getConfig('inheritanceTax.spouseDeduction', 500000000);
+  var spouseDeduct = spouseAlive ? spouseDeductAmt : 0;
   var totalDeduct = personalDeduct + spouseDeduct + funeralDeduct;
   var taxable = Math.max(0, estate - totalDeduct);
   var r = applyGiftTax(taxable);
@@ -115,7 +118,7 @@ function calcInherit() {
     + '절세 방법이나 추가 공제가 가능한지 알려주세요.';
 
   document.getElementById('inh-result').innerHTML =
-    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg, startCode);
+    resultBox(rows, undefined, getLawRef('inheritanceTax')) + explanationBox(explainText) + consultButton(consultMsg, startCode);
 }
 </script>
 </body>

@@ -9,6 +9,51 @@ if (tg) {
   tg.expand();
 }
 
+/* ---------- Tax Config Loading ---------- */
+var TAX_CONFIG = null;
+var CONFIG_LOADED = false;
+
+function loadTaxConfig(callback) {
+  if (CONFIG_LOADED) { callback(); return; }
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', 'tax-config.json?v=7', true);
+  xhr.onload = function() {
+    if (xhr.status === 200) {
+      TAX_CONFIG = JSON.parse(xhr.responseText);
+      CONFIG_LOADED = true;
+      // Update INCOME_BRACKETS and GIFT_BRACKETS from config
+      INCOME_BRACKETS = TAX_CONFIG.incomeTax.brackets.map(function(b) {
+        return { limit: b.limit || Infinity, rate: b.rate, deduct: b.deduct };
+      });
+      GIFT_BRACKETS = TAX_CONFIG.giftTax.brackets.map(function(b) {
+        return { limit: b.limit || Infinity, rate: b.rate, deduct: b.deduct };
+      });
+    }
+    callback();
+  };
+  xhr.onerror = function() { callback(); }; // fallback to hardcoded
+  xhr.send();
+}
+
+// Get config value with dot notation: getConfig('salary.insurance.nationalPension.monthlyCapBase')
+function getConfig(path, defaultVal) {
+  if (!TAX_CONFIG) return defaultVal;
+  var parts = path.split('.');
+  var val = TAX_CONFIG;
+  for (var i = 0; i < parts.length; i++) {
+    if (val === undefined || val === null) return defaultVal;
+    val = val[parts[i]];
+  }
+  return (val !== undefined && val !== null) ? val : defaultVal;
+}
+
+// Get the law reference and effective year for display
+function getLawRef(section) {
+  var law = getConfig(section + '.law', '');
+  var year = getConfig(section + '.effectiveYear', '');
+  return year + '년 기준 (' + law + ')';
+}
+
 /* ---------- Number Formatting ---------- */
 function fmtWon(n) {
   n = Math.floor(n);
@@ -111,10 +156,11 @@ function resultRow(label, value, cls) {
   return '<div class="result-row' + (cls ? ' ' + cls : '') + '"><span class="label">' + label + '</span><span class="value">' + value + '</span></div>';
 }
 
-function resultBox(rows, disclaimerText) {
+function resultBox(rows, disclaimerText, lawRef) {
   var disc = disclaimerText || '* 실제 세액은 추가 공제/감면에 따라 달라질 수 있습니다. 정확한 세액은 세무사 상담을 권장합니다.';
+  var ref = lawRef ? '<p class="law-ref">' + lawRef + '</p>' : '';
   return '<div class="result-box">' + rows.join('') +
-    '<p class="disclaimer">' + disc + '</p></div>';
+    '<p class="disclaimer">' + disc + '</p>' + ref + '</div>';
 }
 
 function explanationBox(text) {
@@ -261,17 +307,19 @@ function setupTelegramBackButton(isHome) {
 
 /* ---------- Init ---------- */
 document.addEventListener('DOMContentLoaded', function() {
-  setupCommaInputs();
-  // Apply Telegram theme
-  if (tg && tg.themeParams) {
-    var tp = tg.themeParams;
-    var root = document.documentElement.style;
-    if (tp.bg_color) root.setProperty('--bg', tp.bg_color);
-    if (tp.text_color) root.setProperty('--text', tp.text_color);
-    if (tp.hint_color) root.setProperty('--hint', tp.hint_color);
-    if (tp.link_color) root.setProperty('--link', tp.link_color);
-    if (tp.button_color) root.setProperty('--btn', tp.button_color);
-    if (tp.button_text_color) root.setProperty('--btn-text', tp.button_text_color);
-    if (tp.secondary_bg_color) root.setProperty('--secondary-bg', tp.secondary_bg_color);
-  }
+  loadTaxConfig(function() {
+    setupCommaInputs();
+    // Apply Telegram theme
+    if (tg && tg.themeParams) {
+      var tp = tg.themeParams;
+      var root = document.documentElement.style;
+      if (tp.bg_color) root.setProperty('--bg', tp.bg_color);
+      if (tp.text_color) root.setProperty('--text', tp.text_color);
+      if (tp.hint_color) root.setProperty('--hint', tp.hint_color);
+      if (tp.link_color) root.setProperty('--link', tp.link_color);
+      if (tp.button_color) root.setProperty('--btn', tp.button_color);
+      if (tp.button_text_color) root.setProperty('--btn-text', tp.button_text_color);
+      if (tp.secondary_bg_color) root.setProperty('--secondary-bg', tp.secondary_bg_color);
+    }
+  });
 });

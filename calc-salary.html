@@ -67,33 +67,56 @@ function calcSalary() {
   var monthly = salaryMode === 'annual' ? Math.floor(rawAmount / 12) : rawAmount;
   var annual = salaryMode === 'annual' ? rawAmount : monthly * 12;
 
-  // 4대 보험 (employee share)
-  var pensionBase = Math.min(monthly, 6170000); // 2024.7~ 상한액
-  var pension = Math.floor(pensionBase * 45 / 1000); // 4.5%
-  var health = Math.floor(monthly * 3545 / 100000); // 3.545%
-  var longCare = Math.floor(health * 1295 / 10000); // 12.95% of health (2024~)
-  var employ = Math.floor(monthly * 9 / 1000); // 0.9%
+  // 4대 보험 (employee share) - from config with fallback
+  var cfg = TAX_CONFIG ? TAX_CONFIG.salary.insurance : null;
+  var pensionCap = cfg ? cfg.nationalPension.monthlyCapBase : 6170000;
+  var pensionFrac = cfg ? cfg.nationalPension.rateFraction : [45, 1000];
+  var healthFrac = cfg ? cfg.healthInsurance.rateFraction : [3545, 100000];
+  var longCareFrac = cfg ? cfg.longTermCare.rateFraction : [1295, 10000];
+  var employFrac = cfg ? cfg.employmentInsurance.rateFraction : [9, 1000];
+
+  var pensionBase = Math.min(monthly, pensionCap);
+  var pension = Math.floor(pensionBase * pensionFrac[0] / pensionFrac[1]);
+  var health = Math.floor(monthly * healthFrac[0] / healthFrac[1]);
+  var longCare = Math.floor(health * longCareFrac[0] / longCareFrac[1]);
+  var employ = Math.floor(monthly * employFrac[0] / employFrac[1]);
   var totalInsurance = pension + health + longCare + employ;
 
   // Simplified income tax calculation
   var taxableMonthly = Math.max(0, monthly - nonTaxable - totalInsurance);
   var annualTaxable = taxableMonthly * 12;
 
-  // Earned income deduction
+  // Earned income deduction - from config with fallback
+  var eidBrackets = getConfig('salary.earnedIncomeDeduction.brackets', null);
   var earnedDeduct = 0;
-  if (annualTaxable <= 5000000) {
-    earnedDeduct = Math.floor(annualTaxable * 70 / 100);
-  } else if (annualTaxable <= 15000000) {
-    earnedDeduct = 3500000 + Math.floor((annualTaxable - 5000000) * 40 / 100);
-  } else if (annualTaxable <= 45000000) {
-    earnedDeduct = 7500000 + Math.floor((annualTaxable - 15000000) * 15 / 100);
-  } else if (annualTaxable <= 100000000) {
-    earnedDeduct = 12000000 + Math.floor((annualTaxable - 45000000) * 5 / 100);
+  if (eidBrackets) {
+    for (var ei = 0; ei < eidBrackets.length; ei++) {
+      var eb = eidBrackets[ei];
+      var ebLimit = eb.limit || Infinity;
+      if (annualTaxable <= ebLimit) {
+        var ebBase = eb.baseDeduct || 0;
+        var prevLimit = ei > 0 ? (eidBrackets[ei - 1].limit || 0) : 0;
+        earnedDeduct = ebBase + Math.floor((annualTaxable - prevLimit) * eb.rate / 100);
+        break;
+      }
+    }
   } else {
-    earnedDeduct = 14750000 + Math.floor((annualTaxable - 100000000) * 2 / 100);
+    if (annualTaxable <= 5000000) {
+      earnedDeduct = Math.floor(annualTaxable * 70 / 100);
+    } else if (annualTaxable <= 15000000) {
+      earnedDeduct = 3500000 + Math.floor((annualTaxable - 5000000) * 40 / 100);
+    } else if (annualTaxable <= 45000000) {
+      earnedDeduct = 7500000 + Math.floor((annualTaxable - 15000000) * 15 / 100);
+    } else if (annualTaxable <= 100000000) {
+      earnedDeduct = 12000000 + Math.floor((annualTaxable - 45000000) * 5 / 100);
+    } else {
+      earnedDeduct = 14750000 + Math.floor((annualTaxable - 100000000) * 2 / 100);
+    }
   }
 
-  var annualTaxBase = Math.max(0, annualTaxable - earnedDeduct - 1500000 - 70000);
+  var personalDeductAmt = getConfig('incomeTax.personalDeductionPerPerson', 1500000);
+  var stdTaxCredit = getConfig('incomeTax.standardTaxCredit', 70000);
+  var annualTaxBase = Math.max(0, annualTaxable - earnedDeduct - personalDeductAmt - stdTaxCredit);
   var r = applyIncomeTax(annualTaxBase);
   var monthlyIncomeTax = Math.floor(r.tax / 12);
   var monthlyLocalTax = Math.floor(monthlyIncomeTax * 10 / 100);
@@ -151,7 +174,7 @@ function calcSalary() {
     + '절세/공제 더 받을 수 있는 방법 알려주세요.';
 
   document.getElementById('sal-result').innerHTML =
-    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg, startCode);
+    resultBox(rows, undefined, getLawRef('salary')) + explanationBox(explainText) + consultButton(consultMsg, startCode);
 }
 </script>
 </body>

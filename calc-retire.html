@@ -47,12 +47,27 @@ function calcRetire() {
   if (severance <= 0) { alert('퇴직금을 입력해주세요.'); return; }
   if (isNaN(years) || years <= 0) { alert('근속연수를 입력해주세요.'); return; }
 
-  // 2023년 개정 근속연수공제 (소득세법 제48조)
+  // 근속연수공제 (소득세법 제48조) - from config with fallback
+  var retBrackets = getConfig('retirementTax.serviceYearDeduction.brackets', null);
   var deduction = 0;
-  if (years <= 5) deduction = 1000000 * years;
-  else if (years <= 10) deduction = 5000000 + 2000000 * (years - 5);
-  else if (years <= 20) deduction = 15000000 + 2500000 * (years - 10);
-  else deduction = 40000000 + 3000000 * (years - 20);
+  if (retBrackets) {
+    var remYears = years;
+    for (var ri = 0; ri < retBrackets.length; ri++) {
+      var rb = retBrackets[ri];
+      var rbMax = rb.maxYears || Infinity;
+      var prevMax = ri > 0 ? (retBrackets[ri - 1].maxYears || 0) : 0;
+      var span = Math.min(remYears, rbMax) - prevMax;
+      if (span > 0) {
+        deduction = rb.base + rb.perYear * span;
+      }
+      if (years <= rbMax) break;
+    }
+  } else {
+    if (years <= 5) deduction = 1000000 * years;
+    else if (years <= 10) deduction = 5000000 + 2000000 * (years - 5);
+    else if (years <= 20) deduction = 15000000 + 2500000 * (years - 10);
+    else deduction = 40000000 + 3000000 * (years - 20);
+  }
 
   var afterDeduct = Math.max(0, severance - deduction);
   var converted = years > 0 ? Math.floor(afterDeduct * 12 / years) : 0;
@@ -106,7 +121,7 @@ function calcRetire() {
     + 'IRP 이연 등 절세 방법 알려주세요.';
 
   document.getElementById('ret-result').innerHTML =
-    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg, startCode);
+    resultBox(rows, undefined, getLawRef('retirementTax')) + explanationBox(explainText) + consultButton(consultMsg, startCode);
 }
 </script>
 </body>

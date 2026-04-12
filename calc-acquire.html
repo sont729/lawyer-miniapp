@@ -71,6 +71,12 @@ function calcAcquire() {
   var propType = document.getElementById('acq-type').value;
   if (price <= 0) { alert('취득가액을 입력해주세요.'); return; }
 
+  var acqCfg = TAX_CONFIG ? TAX_CONFIG.acquisitionTax : null;
+  var landRate = acqCfg ? acqCfg.land * 100 : 400;
+  var commercialRate = acqCfg ? acqCfg.commercial * 100 : 400;
+  var farmSpecTaxRate = acqCfg ? acqCfg.farmSpecialTaxRate : 10;
+  var localEduTaxRate = acqCfg ? acqCfg.localEducationTaxRate : 10;
+
   var acqTaxRate = 0;
   var nongSpecRate = 0;
   var eduRate = 0;
@@ -78,25 +84,30 @@ function calcAcquire() {
   var typeLabel = '';
 
   if (propType === 'land') {
-    acqTaxRate = 400; eduRate = 40; nongSpecRate = 20;
-    rateLabel = '4% (토지)';
+    acqTaxRate = landRate; eduRate = Math.floor(landRate / 10); nongSpecRate = 20;
+    rateLabel = (landRate / 100) + '% (토지)';
     typeLabel = '토지';
   } else if (propType === 'commercial') {
-    acqTaxRate = 400; eduRate = 40; nongSpecRate = 20;
-    rateLabel = '4% (상가/건물)';
+    acqTaxRate = commercialRate; eduRate = Math.floor(commercialRate / 10); nongSpecRate = 20;
+    rateLabel = (commercialRate / 100) + '% (상가/건물)';
     typeLabel = '상가/건물';
   } else {
     typeLabel = '주택';
     var count = document.getElementById('acq-count').value;
     var isAdj = document.getElementById('acq-adjust').checked;
+    var hCfg = acqCfg ? acqCfg.housing : null;
+    var corpRate = hCfg ? hCfg.corpOrFourPlus * 100 : 1200;
+    var threeAdj = hCfg ? hCfg.threeHousesAdjustment * 100 : 1200;
+    var threeNonAdj = hCfg ? hCfg.threeHousesNonAdjustment * 100 : 800;
+    var twoAdj = hCfg ? hCfg.twoHousesAdjustment * 100 : 800;
 
     if (count === '4') {
-      acqTaxRate = 1200; rateLabel = '12% (법인/4주택+)'; nongSpecRate = 100;
+      acqTaxRate = corpRate; rateLabel = (corpRate / 100) + '% (법인/4주택+)'; nongSpecRate = 100;
     } else if (count === '3') {
-      if (isAdj) { acqTaxRate = 1200; rateLabel = '12% (3주택+, 조정지역)'; nongSpecRate = 100; }
-      else { acqTaxRate = 800; rateLabel = '8% (3주택+, 비조정)'; nongSpecRate = 60; }
+      if (isAdj) { acqTaxRate = threeAdj; rateLabel = (threeAdj / 100) + '% (3주택+, 조정지역)'; nongSpecRate = 100; }
+      else { acqTaxRate = threeNonAdj; rateLabel = (threeNonAdj / 100) + '% (3주택+, 비조정)'; nongSpecRate = 60; }
     } else if (count === '2') {
-      if (isAdj) { acqTaxRate = 800; rateLabel = '8% (2주택, 조정지역)'; nongSpecRate = 60; }
+      if (isAdj) { acqTaxRate = twoAdj; rateLabel = (twoAdj / 100) + '% (2주택, 조정지역)'; nongSpecRate = 60; }
       else {
         if (price <= 600000000) { acqTaxRate = 100; rateLabel = '1% (2주택, 비조정, 6억 이하)'; }
         else if (price <= 900000000) {
@@ -130,8 +141,9 @@ function calcAcquire() {
     resultRow('총 납부액', fmtWon(total) + '원', 'total')
   ];
 
+  var filingDays = getConfig('acquisitionTax.filingDeadlineDays', 60);
   var explainText = typeLabel + ' ' + fmtWon(price) + '원 취득 시 ' + rateLabel +
-    ' 적용. 취득일로부터 60일 이내 신고 및 납부해야 합니다. ' +
+    ' 적용. 취득일로부터 ' + filingDays + '일 이내 신고 및 납부해야 합니다. ' +
     '농어촌특별세와 지방교육세가 부가되어 실제 부담액은 취득세보다 높습니다.';
 
   var typeCode = propType === 'house' ? 'h' : propType === 'land' ? 'l' : 'c';
@@ -151,7 +163,7 @@ function calcAcquire() {
     + '감면 가능한지 알려주세요.';
 
   document.getElementById('acq-result').innerHTML =
-    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg, startCode);
+    resultBox(rows, undefined, getLawRef('acquisitionTax')) + explanationBox(explainText) + consultButton(consultMsg, startCode);
 }
 </script>
 </body>

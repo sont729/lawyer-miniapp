@@ -53,13 +53,15 @@ function calcIncome() {
   var persons = parseInt(document.getElementById('inc-persons').value, 10);
   if (totalIncome <= 0) { alert('종합소득금액을 입력해주세요.'); return; }
 
-  var personalDeduct = 1500000 * persons;
+  var personalDeductPerPerson = getConfig('incomeTax.personalDeductionPerPerson', 1500000);
+  var personalDeduct = personalDeductPerPerson * persons;
   var totalDeduct = personalDeduct; // 소득공제
   var taxable = Math.max(0, totalIncome - totalDeduct);
   var r = applyIncomeTax(taxable);
-  var standardTaxCredit = 70000; // 표준세액공제 (세액에서 차감)
+  var standardTaxCredit = getConfig('incomeTax.standardTaxCredit', 70000); // 표준세액공제 (세액에서 차감)
   var taxAfterCredit = Math.max(0, r.tax - standardTaxCredit);
-  var localTax = Math.floor(taxAfterCredit * 10 / 100);
+  var localTaxRate = getConfig('incomeTax.localTaxRate', 10);
+  var localTax = Math.floor(taxAfterCredit * localTaxRate / 100);
 
   var rows = [
     resultRow('종합소득금액', fmtWon(totalIncome) + '원'),
@@ -95,7 +97,7 @@ function calcIncome() {
     + '절세/공제 더 받을 수 있는 방법 알려주세요.';
 
   document.getElementById('inc-result').innerHTML =
-    resultBox(rows) + explanationBox(explainText) + consultButton(consultMsg, startCode);
+    resultBox(rows, undefined, getLawRef('incomeTax')) + explanationBox(explainText) + consultButton(consultMsg, startCode);
 }
 </script>
 </body>
