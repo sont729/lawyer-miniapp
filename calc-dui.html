@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>음주운전 처벌 예상 - 법률 AI</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css?v=7">
+</head>
+<body>
+
+<div class="page-header">
+  <button class="back-btn" onclick="location.href='calc-index.html'">← 뒤로</button>
+  <h1>음주운전 처벌 예상</h1>
+</div>
+
+<div class="container fade-in">
+  <div class="card">
+    <div class="form-group">
+      <label>혈중알코올농도 (%)</label>
+      <input type="text" id="dui-bac" inputmode="decimal" placeholder="예: 0.08">
+      <div class="hint">음주측정 결과 수치 (예: 0.05, 0.12)</div>
+    </div>
+    <div class="form-group">
+      <label>적발 횟수</label>
+      <select id="dui-count">
+        <option value="1" selected>초범 (1회)</option>
+        <option value="2">2범 (2회)</option>
+        <option value="3">3범 이상</option>
+      </select>
+    </div>
+    <div class="checkbox-group">
+      <input type="checkbox" id="dui-accident">
+      <label for="dui-accident">교통사고 발생</label>
+    </div>
+    <div id="dui-injury-opts" style="display:none">
+      <div class="form-group">
+        <label>피해 정도</label>
+        <select id="dui-injury">
+          <option value="property">물적 피해만 (재물 손괴)</option>
+          <option value="injury">부상</option>
+          <option value="serious">중상해</option>
+          <option value="death">사망</option>
+        </select>
+      </div>
+    </div>
+    <div class="checkbox-group">
+      <input type="checkbox" id="dui-refusal">
+      <label for="dui-refusal">음주측정 거부</label>
+    </div>
+    <button class="btn btn-primary" onclick="calcDUI()">예상 처벌 확인</button>
+    <div id="dui-result"></div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>홈</span></a>
+  <a href="consult.html"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/></svg><span>상담</span></a>
+  <a href="calc-index.html" class="active"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 14h-2v-4H7v-2h6V7h2v4h4v2h-4v4z"/></svg><span>계산기</span></a>
+  <a href="lawsuit.html"><svg viewBox="0 0 24 24"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg><span>소송비용</span></a>
+  <a href="docs.html"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg><span>문서작성</span></a>
+</nav>
+
+<script src="shared.js?v=7"></script>
+<script>
+setupTelegramBackButton(false);
+
+document.getElementById('dui-accident').addEventListener('change', function() {
+  document.getElementById('dui-injury-opts').style.display = this.checked ? 'block' : 'none';
+});
+
+function calcDUI() {
+  var bacStr = document.getElementById('dui-bac').value.trim();
+  var count = parseInt(document.getElementById('dui-count').value);
+  var hasAccident = document.getElementById('dui-accident').checked;
+  var isRefusal = document.getElementById('dui-refusal').checked;
+  var injury = hasAccident ? document.getElementById('dui-injury').value : 'none';
+
+  var bac = parseFloat(bacStr);
+  if (!isRefusal && (isNaN(bac) || bac < 0.03)) {
+    alert('혈중알코올농도 0.03% 이상을 입력해주세요.\n(0.03% 미만은 단속 대상이 아닙니다)');
+    return;
+  }
+
+  var rows = [];
+  var criminal = ''; // 형사 처벌
+  var fine = ''; // 벌금
+  var license = ''; // 면허
+  var severity = ''; // 위험도 표시
+  var explainParts = [];
+
+  // 음주측정 거부
+  if (isRefusal) {
+    if (count >= 2) {
+      criminal = '1년~6년 징역 또는 500만~3,000만원 벌금';
+      explainParts.push('음주측정 거부 재범으로 가중처벌됩니다.');
+    } else {
+      criminal = '1년~5년 징역 또는 500만~2,000만원 벌금';
+      explainParts.push('음주측정 거부는 음주운전보다 무거운 처벌을 받습니다.');
+    }
+    license = '면허 취소';
+    severity = 'danger';
+    rows.push(resultRow('음주측정 거부', '도로교통법 제148조의2'));
+  } else {
+    rows.push(resultRow('혈중알코올농도', bac.toFixed(3) + '%'));
+
+    // 도로교통법 제148조의2 (윤창호법, 2019.6.25 시행)
+    if (count >= 2) {
+      // 재범 (10년 내 벌금형 이상 확정 후 재위반) - BAC별 세분화
+      license = '면허 취소';
+      severity = 'danger';
+      if (bac >= 0.2) {
+        criminal = '2년~6년 징역 또는 1,000만~3,000만원 벌금';
+      } else {
+        criminal = '1년~5년 징역 또는 500만~2,000만원 벌금';
+      }
+      explainParts.push(count + '회 이상 음주운전으로 가중처벌됩니다 (10년 내 재범).');
+      if (count >= 3) {
+        explainParts.push('3회 이상은 실형 선고 가능성이 매우 높습니다.');
+      }
+    } else if (bac >= 0.2) {
+      criminal = '2년~5년 징역 또는 1,000만~2,000만원 벌금';
+      license = '면허 취소';
+      severity = 'danger';
+      explainParts.push('혈중알코올농도 0.2% 이상으로 가장 무거운 처벌 구간입니다.');
+    } else if (bac >= 0.08) {
+      criminal = '1년~2년 징역 또는 500만~1,000만원 벌금';
+      license = '면허 취소';
+      severity = 'warning';
+      explainParts.push('0.08% 이상은 면허 취소 대상입니다.');
+    } else {
+      criminal = '1년 이하 징역 또는 500만원 이하 벌금';
+      license = '면허 정지 (100일)';
+      severity = 'caution';
+      explainParts.push('0.03~0.08% 구간으로 면허 정지 처분됩니다.');
+    }
+  }
+
+  rows.push(resultRow('적발 횟수', count >= 3 ? '3범 이상' : count + '회'));
+
+  // 교통사고 가중
+  if (hasAccident) {
+    rows.push(resultRow('', ''));
+    rows.push(resultRow('교통사고 가중처벌', '', 'section-title'));
+    severity = 'danger';
+
+    if (injury === 'death') {
+      criminal = '무기 또는 3년 이상 징역 (특정범죄가중법)';
+      explainParts.push('음주 사망사고는 특정범죄가중처벌법이 적용되어 실형이 확실시됩니다.');
+      rows.push(resultRow('피해', '사망'));
+    } else if (injury === 'serious') {
+      criminal = '1년~15년 징역 또는 1,000만~3,000만원 벌금';
+      explainParts.push('음주 중상해 사고는 특정범죄가중처벌법이 적용됩니다.');
+      rows.push(resultRow('피해', '중상해'));
+    } else if (injury === 'injury') {
+      criminal = '5년 이하 징역 또는 2,000만원 이하 벌금 (교통사고처리특례법)';
+      explainParts.push('일반 음주 부상사고는 교통사고처리특례법이 적용됩니다. 정상운전이 곤란한 상태였다면 위험운전치상(1~15년)이 적용될 수 있습니다.');
+      rows.push(resultRow('피해', '부상'));
+    } else {
+      explainParts.push('물적 피해만 있는 경우에도 음주운전과 병합하여 처벌이 무거워집니다.');
+      rows.push(resultRow('피해', '재물 손괴'));
+    }
+  }
+
+  rows.push(resultRow('', ''));
+  rows.push(resultRow('예상 형사 처벌', criminal, severity === 'danger' ? 'total' : ''));
+  rows.push(resultRow('면허 처분', license));
+
+  // 행정처분 (벌점)
+  if (!isRefusal) {
+    var penalty = '';
+    if (bac >= 0.08) penalty = '벌점 100점 (면허 취소)';
+    else penalty = '벌점 100점 (면허 정지 100일)';
+    rows.push(resultRow('행정 벌점', penalty));
+  }
+
+  var explainText = explainParts.join(' ') +
+    ' 실제 처벌은 구체적 사정(반성, 합의, 전과, 운전 경위 등)에 따라 달라질 수 있습니다.' +
+    ' 초범이고 사고가 없다면 벌금형으로 끝나는 경우가 많지만, 2범 이상이거나 사고가 있으면 실형 가능성이 높아집니다.';
+
+  var tips = tipBox('<strong>음주운전으로 적발되셨나요?</strong> 초기 대응이 중요합니다. 경찰 조사 전 변호사 조력을 받으시면 처벌을 최소화할 수 있습니다. 상담에서 구체적인 상황을 말씀해주세요.');
+
+  var consultMsg = '음주운전 처벌 예상 결과로 상담 요청합니다.\n'
+    + '━━━━━━━━━━━━━━\n'
+    + (isRefusal ? '음주측정 거부\n' : '혈중알코올농도: ' + bac.toFixed(3) + '%\n')
+    + '적발 횟수: ' + count + '회\n'
+    + (hasAccident ? '교통사고: ' + injury + '\n' : '교통사고: 없음\n')
+    + '예상 처벌: ' + criminal + '\n'
+    + '면허: ' + license + '\n'
+    + '━━━━━━━━━━━━━━\n'
+    + '대응 방법을 알려주세요.';
+
+  document.getElementById('dui-result').innerHTML =
+    resultBox(rows, '* 실제 양형은 법원의 재량에 따라 달라집니다. 참고용으로만 활용하세요.', '도로교통법 제148조의2, 특정범죄가중처벌법 제5조의11') + explanationBox(explainText) + tips + consultButton(consultMsg);
+}
+</script>
+</body>
+</html>

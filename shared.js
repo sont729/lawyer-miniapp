@@ -157,7 +157,7 @@ function resultRow(label, value, cls) {
 }
 
 function resultBox(rows, disclaimerText, lawRef) {
-  var disc = disclaimerText || '* 본 계산기는 일반적인 경우를 기준으로 한 추정치입니다. 세대생략 증여(할증 30%), 분양권/비사업용 토지 양도, 신용카드 발행세액공제, 고급주택 중과 등 특수 케이스는 반영되지 않습니다. 정확한 세액은 세무사 상담을 권장합니다.';
+  var disc = disclaimerText || '* 본 계산기는 일반적인 경우를 기준으로 한 추정치입니다. 특수한 상황은 반영되지 않으므로 정확한 결과는 전문가 상담을 권장합니다.';
   var ref = lawRef ? '<p class="law-ref">' + lawRef + '</p>' : '';
   return '<div class="result-box">' + rows.join('') +
     '<p class="disclaimer">' + disc + '</p>' + ref + '</div>';
@@ -193,6 +193,11 @@ function showToast(msg) {
   setTimeout(function() { d.remove(); }, 2500);
 }
 
+// sendData는 KeyboardButton으로 열었을 때만 작동. MenuButton은 clipboard fallback.
+function canSendData() {
+  try { return tg && tg.initDataUnsafe && tg.initDataUnsafe.query_id; } catch(e) { return false; }
+}
+
 function sendToChat(message) {
   copyToClip(message);
   if (tg) {
@@ -221,14 +226,15 @@ function doConsult() {
   if (userQ && userQ.value.trim()) {
     message += '\n\n추가 질문: ' + userQ.value.trim();
   }
-  if (tg) {
+  if (canSendData()) {
     try { tg.sendData(message); } catch(e) { sendToChat(message); }
   } else {
     sendToChat(message);
   }
 }
 
-var FAQ_CODES = {
+
+var _FAQ_ROUTE = {
   '전세보증금을 돌려받으려면 어떻게 해야 하나요?': 'faq_jeonse',
   '부당해고를 당했는데 어떻게 대응해야 하나요?': 'faq_dismissal',
   '교통사고 합의금은 어떻게 산정하나요?': 'faq_accident',
@@ -237,10 +243,12 @@ var FAQ_CODES = {
 };
 
 function goConsult(question) {
-  if (tg) {
-    try { tg.sendData(question); } catch(e) { sendToChat(question); }
+  var code = _FAQ_ROUTE[question];
+  var msg = code ? '/start ' + code : question;
+  if (canSendData()) {
+    try { tg.sendData(msg); } catch(e) { sendToChat(msg); }
   } else {
-    sendToChat(question);
+    sendToChat(msg);
   }
 }
 
@@ -259,33 +267,26 @@ function goChat() {
 }
 
 
-var DOC_CODES = {
-  '내용증명': 'doc_content_cert',
-  '고소장': 'doc_complaint',
-  '민사소장': 'doc_civil',
-  '합의서': 'doc_settlement',
-  '근로계약서': 'doc_labor',
-  '차용증': 'doc_loan',
-  '진정서': 'doc_petition',
-  '이의신청서': 'doc_objection',
-  '위임장': 'doc_poa',
-  '사직서': 'doc_resign',
-  '경위서': 'doc_incident',
-  '상속포기신고서': 'doc_inherit_waiver',
-  '부당해고구제신청서': 'doc_unfair_dismiss',
-  'NDA (비밀유지계약서)': 'doc_nda',
-  '업무위탁계약서': 'doc_service',
-  '분납요청서': 'doc_installment',
-  '각서': 'doc_pledge',
-  '고소취하서': 'doc_withdraw',
-  '답변서': 'doc_answer',
-  '임대차계약서': 'doc_lease',
-  '이혼합의서': 'doc_divorce'
+
+function tipBox(text) {
+  return '<div class="tip-box">' + text + '</div>';
+}
+
+var _DOC_ROUTE = {
+  '내용증명':'doc_content_cert','고소장':'doc_complaint','민사소장':'doc_civil',
+  '합의서':'doc_settlement','근로계약서':'doc_labor','차용증':'doc_loan',
+  '진정서':'doc_petition','이의신청서':'doc_objection','위임장':'doc_poa',
+  '사직서':'doc_resign','경위서':'doc_incident','상속포기신고서':'doc_inherit_waiver',
+  '부당해고구제신청서':'doc_unfair_dismiss','NDA (비밀유지계약서)':'doc_nda',
+  '업무위탁계약서':'doc_service','분납요청서':'doc_installment','각서':'doc_pledge',
+  '고소취하서':'doc_withdraw','답변서':'doc_answer','임대차계약서':'doc_lease',
+  '이혼합의서':'doc_divorce'
 };
 
 function requestDoc(docName) {
-  var msg = docName + ' 작성해주세요.';
-  if (tg) {
+  var code = _DOC_ROUTE[docName];
+  var msg = code ? '/start ' + code : docName + ' 작성해주세요.';
+  if (canSendData()) {
     try { tg.sendData(msg); } catch(e) { sendToChat(msg); }
   } else {
     sendToChat(msg);

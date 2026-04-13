@@ -38,6 +38,11 @@
           <option value="4">법인/4주택+</option>
         </select>
       </div>
+      <div class="form-group">
+        <label>전용면적 (㎡)</label>
+        <input type="text" id="acq-area" inputmode="numeric" placeholder="예: 84">
+        <div class="hint">85㎡ 이하 주택은 농어촌특별세 비과세</div>
+      </div>
       <div class="checkbox-group">
         <input type="checkbox" id="acq-adjust">
         <label for="acq-adjust">조정대상지역</label>
@@ -124,6 +129,11 @@ function calcAcquire() {
       } else { acqTaxRate = 300; rateLabel = '3% (1주택, 9억 초과)'; }
       nongSpecRate = 20;
     }
+    // 전용면적 85㎡ 이하 주택: 농어촌특별세 비과세
+    var area = parseFloat(document.getElementById('acq-area').value) || 0;
+    if (area > 0 && area <= 85) {
+      nongSpecRate = 0;
+    }
     // 다주택 중과(8%, 12%) 시 지방교육세 0.4% 고정 (지방세법 특례)
     if (acqTaxRate >= 800) {
       eduRate = 40; // 0.4%
@@ -147,9 +157,10 @@ function calcAcquire() {
   ];
 
   var filingDays = getConfig('acquisitionTax.filingDeadlineDays', 60);
+  var areaNote = (propType === 'house' && area > 0 && area <= 85) ? ' 전용면적 ' + area + '㎡(85㎡ 이하)로 농어촌특별세가 비과세됩니다.' : '';
   var explainText = typeLabel + ' ' + fmtWon(price) + '원 취득 시 ' + rateLabel +
-    ' 적용. 취득일로부터 ' + filingDays + '일 이내 신고 및 납부해야 합니다. ' +
-    '농어촌특별세와 지방교육세가 부가되어 실제 부담액은 취득세보다 높습니다.';
+    ' 적용. 취득일로부터 ' + filingDays + '일 이내 신고 및 납부해야 합니다.' + areaNote +
+    (areaNote ? '' : ' 농어촌특별세와 지방교육세가 부가되어 실제 부담액은 취득세보다 높습니다.');
 
   var typeCode = propType === 'house' ? 'h' : propType === 'land' ? 'l' : 'c';
   var houseCount = propType === 'house' ? document.getElementById('acq-count').value : '0';
@@ -159,6 +170,7 @@ function calcAcquire() {
     + '취득가액: ' + fmtWon(price) + '원\n'
     + '부동산 유형: ' + typeLabel + '\n'
     + (propType === 'house' ? '주택 수: ' + document.getElementById('acq-count').value + '주택\n' : '')
+    + (propType === 'house' && area > 0 ? '전용면적: ' + area + '㎡\n' : '')
     + '취득세율: ' + rateLabel + '\n'
     + '취득세: ' + fmtWon(acqTax) + '원\n'
     + '농어촌특별세: ' + fmtWon(nongSpec) + '원\n'
@@ -167,8 +179,16 @@ function calcAcquire() {
     + '━━━━━━━━━━━━━━\n'
     + '감면 가능한지 알려주세요.';
 
+  var tips = '';
+  if (propType === 'house' && (count === '2')) {
+    tips += tipBox('<strong>일시적 2주택이신가요?</strong> 이사를 위해 새 주택을 취득한 경우, 기존 주택을 3년 내 처분하면 1주택 세율이 적용됩니다.');
+  }
+  if (propType === 'house' && count === '1') {
+    tips += tipBox('<strong>생애 최초 주택 구매인가요?</strong> 12억 이하 주택은 취득세 최대 200만원 감면이 가능합니다. 상담에서 확인해보세요.');
+  }
+
   document.getElementById('acq-result').innerHTML =
-    resultBox(rows, undefined, getLawRef('acquisitionTax')) + explanationBox(explainText) + consultButton(consultMsg, startCode);
+    resultBox(rows, undefined, getLawRef('acquisitionTax')) + explanationBox(explainText) + tips + consultButton(consultMsg, startCode);
 }
 </script>
 </body>

@@ -1,15 +1,15 @@
 {
   "_meta": {
-    "version": "2024.1",
+    "version": "2026.1",
     "lastUpdated": "2026-04-13",
-    "appliesTo": "2024년 귀속",
+    "appliesTo": "2026년 기준",
     "note": "법 개정 시 이 파일만 수정하면 모든 계산기에 자동 반영됩니다."
   },
 
   "incomeTax": {
     "name": "종합소득세",
     "law": "소득세법 제55조",
-    "effectiveYear": 2024,
+    "effectiveYear": 2026,
     "brackets": [
       { "limit": 14000000,   "rate": 6,  "deduct": 0 },
       { "limit": 50000000,   "rate": 15, "deduct": 1260000 },
@@ -28,7 +28,7 @@
   "giftTax": {
     "name": "증여세",
     "law": "상속세및증여세법 제26조, 제53조",
-    "effectiveYear": 2024,
+    "effectiveYear": 2026,
     "brackets": [
       { "limit": 100000000,   "rate": 10, "deduct": 0 },
       { "limit": 500000000,   "rate": 20, "deduct": 10000000 },
@@ -50,7 +50,7 @@
   "inheritanceTax": {
     "name": "상속세",
     "law": "상속세및증여세법 제18조~제23조",
-    "effectiveYear": 2024,
+    "effectiveYear": 2026,
     "brackets": "giftTax.brackets와 동일",
     "basicDeduction": 200000000,
     "childDeductionPer": 50000000,
@@ -62,7 +62,7 @@
   "capitalGainsTax": {
     "name": "양도소득세",
     "law": "소득세법 제95조, 제104조",
-    "effectiveYear": 2024,
+    "effectiveYear": 2026,
     "brackets": "incomeTax.brackets와 동일",
     "basicDeduction": 2500000,
     "oneHouseExemptionLimit": 1200000000,
@@ -137,7 +137,7 @@
   "acquisitionTax": {
     "name": "취득세",
     "law": "지방세법 제11조",
-    "effectiveYear": 2024,
+    "effectiveYear": 2026,
     "housing": {
       "oneHouse": {
         "under6억": 1.0,
@@ -160,7 +160,7 @@
   "retirementTax": {
     "name": "퇴직소득세",
     "law": "소득세법 제48조",
-    "effectiveYear": 2024,
+    "effectiveYear": 2026,
     "serviceYearDeduction": {
       "note": "2023년 개정 반영",
       "brackets": [
@@ -175,12 +175,13 @@
   "comprehensiveRealEstateTax": {
     "name": "종합부동산세",
     "law": "종합부동산세법 제8조, 제9조",
-    "effectiveYear": 2024,
+    "effectiveYear": 2026,
     "fairMarketRatio": 60,
     "formula": "(공시가격 - 기본공제) × 공정시장가액비율",
     "baseDeduction": {
       "oneHouse": 1200000000,
-      "multiHouse": 900000000
+      "multiHouse": 900000000,
+      "corporate": 0
     },
     "oneHouseRates": [
       { "limit": 300000000,  "rate": 0.5 },
@@ -198,13 +199,26 @@
       { "limit": 5000000000, "rate": 1.5 },
       { "limit": 9400000000, "rate": 2.0 },
       { "limit": null,       "rate": 2.7 }
-    ]
+    ],
+    "threeHouseRates": [
+      { "limit": 300000000,  "rate": 0.5 },
+      { "limit": 600000000,  "rate": 0.7 },
+      { "limit": 1200000000, "rate": 1.0 },
+      { "limit": 2500000000, "rate": 2.0 },
+      { "limit": 5000000000, "rate": 3.0 },
+      { "limit": 9400000000, "rate": 4.0 },
+      { "limit": null,       "rate": 5.0 }
+    ],
+    "corporateRates": {
+      "twoOrLess": 2.7,
+      "threeOrMore": 5.0
+    }
   },
 
   "vat": {
     "name": "부가가치세",
     "law": "부가가치세법",
-    "effectiveYear": 2024,
+    "effectiveYear": 2026,
     "generalRate": 10,
     "simplifiedThreshold": 104000000,
     "simplifiedExemptThreshold": 48000000,
@@ -212,7 +226,7 @@
       "retail": 15,
       "manufacturing": 20,
       "service": 30,
-      "restaurant": 40,
+      "restaurant": 15,
       "realEstateRental": 40
     }
   },
@@ -220,7 +234,7 @@
   "litigationCost": {
     "name": "소송비용",
     "law": "민사소송등인지법 제2조",
-    "effectiveYear": 2024,
+    "effectiveYear": 2026,
     "stampFeeBrackets": [
       { "limit": 10000000,   "rateNum": 50,  "rateDen": 10000, "add": 0 },
       { "limit": 100000000,  "rateNum": 45,  "rateDen": 10000, "add": 5000 },

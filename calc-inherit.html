@@ -21,8 +21,15 @@
       <input type="text" id="inh-estate" inputmode="numeric" placeholder="예: 1,000,000,000" data-comma>
     </div>
     <div class="checkbox-group">
-      <input type="checkbox" id="inh-spouse" checked>
+      <input type="checkbox" id="inh-spouse" checked onchange="toggleSpouseShare()">
       <label for="inh-spouse">배우자 생존</label>
+    </div>
+    <div id="inh-spouse-opts">
+      <div class="form-group">
+        <label>배우자 실제 상속분 (원, 선택)</label>
+        <input type="text" id="inh-spouse-share" inputmode="numeric" placeholder="미입력 시 최소 5억 적용" data-comma>
+        <div class="hint">실제 상속분 입력 시 최대 30억까지 공제 (법정상속분 한도)</div>
+      </div>
     </div>
     <div class="form-group">
       <label>자녀 수</label>
@@ -36,7 +43,7 @@
       </select>
     </div>
     <div class="form-group">
-      <label>장례비용 (원, 최대 1,500만원 공제)</label>
+      <label>장례비용 (원, 직접비용 최대 1,000만원 + 봉안 500만원)</label>
       <input type="text" id="inh-funeral" inputmode="numeric" placeholder="예: 10,000,000" data-comma>
     </div>
     <button class="btn btn-primary" onclick="calcInherit()">계산하기</button>
@@ -56,6 +63,12 @@
 <script>
 setupTelegramBackButton(false);
 
+function toggleSpouseShare() {
+  var show = document.getElementById('inh-spouse').checked;
+  document.getElementById('inh-spouse-opts').style.display = show ? 'block' : 'none';
+}
+toggleSpouseShare();
+
 function calcInherit() {
   var estate = parseWon(document.getElementById('inh-estate').value);
   var spouseAlive = document.getElementById('inh-spouse').checked;
@@ -65,7 +78,7 @@ function calcInherit() {
 
   var funeralMax = getConfig('inheritanceTax.funeralCostMax', 15000000);
   var funeralDeduct = Math.min(funeral, funeralMax);
-  if (funeral === 0) funeralDeduct = 5000000;
+  if (funeralDeduct < 5000000) funeralDeduct = 5000000; // 시행령 제9조: 500만원 미만이면 500만원
 
   var basicDeduct = getConfig('inheritanceTax.basicDeduction', 200000000);
   var childDeductPer = getConfig('inheritanceTax.childDeductionPer', 50000000);
@@ -73,8 +86,25 @@ function calcInherit() {
   var itemizedTotal = basicDeduct + childDeduct;
   var lumpSum = getConfig('inheritanceTax.lumpSumDeduction', 500000000);
   var personalDeduct = Math.max(itemizedTotal, lumpSum);
-  var spouseDeductAmt = getConfig('inheritanceTax.spouseDeduction', 500000000);
-  var spouseDeduct = spouseAlive ? spouseDeductAmt : 0;
+  var spouseDeduct = 0;
+  var spouseShareInput = parseWon(document.getElementById('inh-spouse-share').value);
+  if (spouseAlive) {
+    // 법정상속비율: 배우자 1.5 : 자녀 각 1
+    // 자녀 0명이면 배우자 단독상속으로 계산 (직계존속 유무 미입력)
+    // 주의: 부모가 생존하면 배우자+부모 공동상속 (민법 제1003조)
+    var spouseLegalRatio = numChildren > 0 ? 1.5 / (1.5 + numChildren) : 1;
+    var spouseLegalShare = Math.floor(estate * spouseLegalRatio);
+    var spouseMin = 500000000; // 최소 5억
+    var spouseMax = 3000000000; // 최대 30억
+    if (spouseShareInput > 0) {
+      // 실제 상속분 입력 시: min(실제상속분, 법정상속분) 범위, 최소 5억 최대 30억
+      spouseDeduct = Math.min(spouseShareInput, spouseLegalShare);
+      spouseDeduct = Math.max(spouseDeduct, spouseMin);
+      spouseDeduct = Math.min(spouseDeduct, spouseMax);
+    } else {
+      spouseDeduct = spouseMin;
+    }
+  }
   var totalDeduct = personalDeduct + spouseDeduct + funeralDeduct;
   var taxable = Math.max(0, estate - totalDeduct);
   var r = applyGiftTax(taxable);
@@ -86,7 +116,12 @@ function calcInherit() {
     resultRow('일괄공제', fmtWon(lumpSum) + '원'),
     resultRow('적용 인적공제', fmtWon(personalDeduct) + '원 (큰 값 적용)')
   ];
-  if (spouseAlive) rows.push(resultRow('배우자 공제', fmtWon(spouseDeduct) + '원'));
+  if (spouseAlive) {
+    var spouseDetail = fmtWon(spouseDeduct) + '원';
+    if (spouseShareInput > 0) spouseDetail += ' (실제 상속분 기준)';
+    else spouseDetail += ' (최소 공제)';
+    rows.push(resultRow('배우자 공제', spouseDetail));
+  }
   rows.push(resultRow('장례비 공제', fmtWon(funeralDeduct) + '원'));
   rows.push(resultRow('총 공제', fmtWon(totalDeduct) + '원'));
   rows.push(resultRow('과세표준', fmtWon(taxable) + '원'));
@@ -108,7 +143,7 @@ function calcInherit() {
     + '자녀공제 (' + numChildren + '명): ' + fmtWon(childDeduct) + '원\n'
     + '일괄공제: ' + fmtWon(lumpSum) + '원\n'
     + '적용 인적공제: ' + fmtWon(personalDeduct) + '원\n'
-    + (spouseAlive ? '배우자 공제: ' + fmtWon(spouseDeduct) + '원\n' : '')
+    + (spouseAlive ? '배우자 공제: ' + fmtWon(spouseDeduct) + '원' + (spouseShareInput > 0 ? ' (실제 상속분 ' + fmtWon(spouseShareInput) + '원)' : ' (최소 공제)') + '\n' : '')
     + '장례비 공제: ' + fmtWon(funeralDeduct) + '원\n'
     + '총 공제: ' + fmtWon(totalDeduct) + '원\n'
     + '과세표준: ' + fmtWon(taxable) + '원\n'
@@ -117,8 +152,14 @@ function calcInherit() {
     + '━━━━━━━━━━━━━━\n'
     + '절세 방법이나 추가 공제가 가능한지 알려주세요.';
 
+  var tips = '';
+  if (spouseAlive && numChildren === 0) {
+    tips += tipBox('<strong>부모(직계존속)가 생존해 계신가요?</strong> 자녀가 없어도 피상속인의 부모가 생존하면 배우자와 공동상속(배우자 1.5 : 부모 각 1)이 됩니다. 이 경우 배우자공제 한도가 달라질 수 있으니 상담에서 정확히 확인하세요.');
+  }
+  tips += tipBox('<strong>금융재산(예금/주식)이 포함되어 있나요?</strong> 최대 2억원 추가 공제가 가능합니다. 10년 이상 동거한 자녀가 있다면 최대 6억원 동거주택 공제도 받을 수 있습니다.');
+
   document.getElementById('inh-result').innerHTML =
-    resultBox(rows, undefined, getLawRef('inheritanceTax')) + explanationBox(explainText) + consultButton(consultMsg, startCode);
+    resultBox(rows, undefined, getLawRef('inheritanceTax')) + explanationBox(explainText) + tips + consultButton(consultMsg, startCode);
 }
 </script>
 </body>

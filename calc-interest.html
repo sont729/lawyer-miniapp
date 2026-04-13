@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>지연이자 계산기 - 법률 AI</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css?v=7">
+</head>
+<body>
+
+<div class="page-header">
+  <button class="back-btn" onclick="location.href='calc-index.html'">← 뒤로</button>
+  <h1>지연이자 계산기</h1>
+</div>
+
+<div class="container fade-in">
+  <div class="card">
+    <div class="form-group">
+      <label>원금 (원)</label>
+      <input type="text" id="int-principal" inputmode="numeric" placeholder="예: 50,000,000" data-comma>
+    </div>
+    <div class="form-group">
+      <label>채권 유형</label>
+      <select id="int-type">
+        <option value="civil" selected>민사 (연 5%)</option>
+        <option value="commercial">상사 (연 6%)</option>
+      </select>
+      <div class="hint">개인 간 거래는 민사, 사업자 간 거래는 상사</div>
+    </div>
+    <div class="form-group">
+      <label>이행기일 (돈을 갚기로 한 날)</label>
+      <input type="text" id="int-due" placeholder="2024-01-01">
+      <div class="hint">약정 변제일 또는 채무 이행 촉구일</div>
+    </div>
+    <div class="form-group">
+      <label>소장 송달일 (선택)</label>
+      <input type="text" id="int-served" placeholder="미입력 시 생략">
+      <div class="hint">소장 송달 후부터 소송촉진법 연 12% 적용</div>
+    </div>
+    <div class="form-group">
+      <label>계산 종료일</label>
+      <input type="text" id="int-end" placeholder="2026-04-13" value="2026-04-13">
+      <div class="hint">판결 예상일 또는 현재 날짜</div>
+    </div>
+    <button class="btn btn-primary" onclick="calcInterest()">계산하기</button>
+    <div id="int-result"></div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>홈</span></a>
+  <a href="consult.html"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/></svg><span>상담</span></a>
+  <a href="calc-index.html" class="active"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 14h-2v-4H7v-2h6V7h2v4h4v2h-4v4z"/></svg><span>계산기</span></a>
+  <a href="lawsuit.html"><svg viewBox="0 0 24 24"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg><span>소송비용</span></a>
+  <a href="docs.html"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg><span>문서작성</span></a>
+</nav>
+
+<script src="shared.js?v=7"></script>
+<script>
+setupTelegramBackButton(false);
+
+function calcInterest() {
+  var principal = parseWon(document.getElementById('int-principal').value);
+  var intType = document.getElementById('int-type').value;
+  var dueStr = document.getElementById('int-due').value.trim();
+  var servedStr = document.getElementById('int-served').value.trim();
+  var endStr = document.getElementById('int-end').value.trim();
+  if (principal <= 0) { alert('원금을 입력해주세요.'); return; }
+  if (!dueStr || !endStr) { alert('이행기일과 종료일을 입력해주세요.'); return; }
+  if (isNaN(new Date(dueStr).getTime()) || isNaN(new Date(endStr).getTime())) {
+    alert('올바른 날짜 형식(YYYY-MM-DD)으로 입력해주세요.'); return;
+  }
+
+  var baseRate = intType === 'commercial' ? 6 : 5; // 민사 5%, 상사 6%
+  var accelRate = 12; // 소송촉진법
+  var typeLabel = intType === 'commercial' ? '상사' : '민사';
+
+  var hasServed = servedStr && !isNaN(new Date(servedStr).getTime());
+  var totalDays = dateDiffDays(dueStr, endStr);
+  if (totalDays <= 0) { alert('종료일은 이행기일 이후여야 합니다.'); return; }
+
+  var rows = [
+    resultRow('원금', fmtWon(principal) + '원'),
+    resultRow('채권 유형', typeLabel + ' (연 ' + baseRate + '%)'),
+    resultRow('', '')
+  ];
+
+  var totalInterest = 0;
+
+  if (hasServed) {
+    var servedDate = new Date(servedStr);
+    var dueDate = new Date(dueStr);
+    var endDate = new Date(endStr);
+
+    // 송달일이 종료일 이후면 종료일로 클램프
+    var effectiveServed = servedStr;
+    if (servedDate > endDate) {
+      effectiveServed = endStr;
+    }
+    // 송달일이 이행기일 이전이면 이행기일로 클램프
+    if (servedDate < dueDate) {
+      effectiveServed = dueStr;
+    }
+
+    // 구간 1: 이행기일 ~ 소장 송달일 (법정이율)
+    var days1 = Math.max(0, dateDiffDays(dueStr, effectiveServed));
+    var interest1 = Math.floor(principal * baseRate / 100 * days1 / 365);
+
+    // 구간 2: 소장 송달일 ~ 종료일 (소송촉진법 12%)
+    var days2 = Math.max(0, dateDiffDays(effectiveServed, endStr));
+    var interest2 = Math.floor(principal * accelRate / 100 * days2 / 365);
+
+    totalInterest = interest1 + interest2;
+
+    rows.push(resultRow('구간 1: 법정이율', '', 'section-title'));
+    rows.push(resultRow(dueStr + ' ~ ' + effectiveServed, days1 + '일'));
+    rows.push(resultRow('연 ' + baseRate + '% 적용', fmtWon(interest1) + '원'));
+    rows.push(resultRow('', ''));
+    rows.push(resultRow('구간 2: 소송촉진법', '', 'section-title'));
+    rows.push(resultRow(effectiveServed + ' ~ ' + endStr, days2 + '일'));
+    rows.push(resultRow('연 ' + accelRate + '% 적용', fmtWon(interest2) + '원'));
+  } else {
+    // 소장 송달일 미입력: 전체 기간 법정이율만 적용
+    totalInterest = Math.floor(principal * baseRate / 100 * totalDays / 365);
+    rows.push(resultRow('기간', dueStr + ' ~ ' + endStr + ' (' + totalDays + '일)'));
+    rows.push(resultRow('연 ' + baseRate + '% 적용', fmtWon(totalInterest) + '원'));
+  }
+
+  var totalClaim = principal + totalInterest;
+  rows.push(resultRow('', ''));
+  rows.push(resultRow('지연이자 합계', fmtWon(totalInterest) + '원'));
+  rows.push(resultRow('총 청구 가능액', fmtWon(totalClaim) + '원', 'total'));
+
+  var explainText = typeLabel + ' 법정이율 연 ' + baseRate + '%가 적용됩니다 (민법 제379조' + (intType === 'commercial' ? ', 상법 제54조' : '') + '). ';
+  if (hasServed) {
+    explainText += '소장 송달일 이후부터는 소송촉진 등에 관한 특례법 제3조에 따라 연 12%의 지연손해금이 적용됩니다. ';
+  }
+  explainText += '이자는 일할 계산(원금 x 이율 x 일수/365)으로 산출됩니다. 약정이율이 별도로 있으면 약정이율이 우선 적용됩니다.';
+
+  var tips = tipBox('<strong>나홀로 소송을 준비 중이신가요?</strong> 소장에 지연이자 청구를 빠뜨리면 원금만 받게 됩니다. 정확한 청구취지 작성이 필요하시면 상담해주세요.');
+
+  var consultMsg = '지연이자 계산 결과로 상담 요청합니다.\n'
+    + '━━━━━━━━━━━━━━\n'
+    + '원금: ' + fmtWon(principal) + '원\n'
+    + '채권유형: ' + typeLabel + ' (연 ' + baseRate + '%)\n'
+    + '이행기일: ' + dueStr + '\n'
+    + (hasServed ? '소장 송달일: ' + servedStr + '\n' : '')
+    + '종료일: ' + endStr + '\n'
+    + '지연이자: ' + fmtWon(totalInterest) + '원\n'
+    + '총 청구액: ' + fmtWon(totalClaim) + '원\n'
+    + '━━━━━━━━━━━━━━\n'
+    + '소장 작성이나 채권 추심 방법을 알려주세요.';
+
+  document.getElementById('int-result').innerHTML =
+    resultBox(rows, '* 약정이율이 있는 경우 약정이율이 우선 적용됩니다. 복리가 아닌 단리 계산입니다.', '민법 제379조, 소송촉진 등에 관한 특례법 제3조') + explanationBox(explainText) + tips + consultButton(consultMsg);
+}
+</script>
+</body>
+</html>

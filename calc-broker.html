@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>중개수수료 계산기 - 법률 AI</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css?v=7">
+</head>
+<body>
+
+<div class="page-header">
+  <button class="back-btn" onclick="location.href='calc-index.html'">← 뒤로</button>
+  <h1>중개수수료 계산기</h1>
+</div>
+
+<div class="container fade-in">
+  <div class="card">
+    <div class="form-group">
+      <label>거래 유형</label>
+      <select id="bk-deal" onchange="toggleBkRent()">
+        <option value="buy" selected>매매</option>
+        <option value="jeonse">전세</option>
+        <option value="monthly">월세</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>부동산 유형</label>
+      <select id="bk-type">
+        <option value="house" selected>주택</option>
+        <option value="officetel">오피스텔 (주거용)</option>
+        <option value="commercial">상가/토지/기타</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label id="bk-price-label">매매가 (원)</label>
+      <input type="text" id="bk-price" inputmode="numeric" placeholder="예: 500,000,000" data-comma>
+    </div>
+    <div id="bk-rent-opts" style="display:none">
+      <div class="form-group">
+        <label>월세 (원)</label>
+        <input type="text" id="bk-monthly" inputmode="numeric" placeholder="예: 500,000" data-comma>
+        <div class="hint">환산보증금 = 보증금 + (월세 x 100)</div>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="calcBroker()">계산하기</button>
+    <div id="bk-result"></div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>홈</span></a>
+  <a href="consult.html"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/></svg><span>상담</span></a>
+  <a href="calc-index.html" class="active"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 14h-2v-4H7v-2h6V7h2v4h4v2h-4v4z"/></svg><span>계산기</span></a>
+  <a href="lawsuit.html"><svg viewBox="0 0 24 24"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg><span>소송비용</span></a>
+  <a href="docs.html"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg><span>문서작성</span></a>
+</nav>
+
+<script src="shared.js?v=7"></script>
+<script>
+setupTelegramBackButton(false);
+
+function toggleBkRent() {
+  var deal = document.getElementById('bk-deal').value;
+  document.getElementById('bk-rent-opts').style.display = deal === 'monthly' ? 'block' : 'none';
+  if (deal === 'buy') document.getElementById('bk-price-label').textContent = '매매가 (원)';
+  else if (deal === 'jeonse') document.getElementById('bk-price-label').textContent = '보증금 (원)';
+  else document.getElementById('bk-price-label').textContent = '보증금 (원)';
+}
+
+function calcBroker() {
+  var deal = document.getElementById('bk-deal').value;
+  var propType = document.getElementById('bk-type').value;
+  var price = parseWon(document.getElementById('bk-price').value);
+  var monthlyRent = parseWon(document.getElementById('bk-monthly').value);
+  if (price <= 0 && monthlyRent <= 0) { alert('금액을 입력해주세요.'); return; }
+
+  // 월세: 환산보증금 계산
+  var baseAmount = price;
+  var isRent = (deal === 'jeonse' || deal === 'monthly');
+  if (deal === 'monthly') {
+    baseAmount = price + (monthlyRent * 100);
+    // 5천만원 미만이면 월세 x 70
+    if (baseAmount < 50000000) baseAmount = price + (monthlyRent * 70);
+  }
+
+  var rate = 0; // 퍼센트 (소수)
+  var cap = 0; // 한도액
+  var rateLabel = '';
+
+  if (propType === 'commercial') {
+    rate = 0.9; rateLabel = '0.9% 이내 (상가/토지)';
+  } else if (propType === 'officetel') {
+    if (isRent) { rate = 0.4; rateLabel = '0.4% (오피스텔 임대)'; }
+    else { rate = 0.5; rateLabel = '0.5% (오피스텔 매매)'; }
+  } else {
+    // 주택
+    if (isRent) {
+      // 주택 임대차
+      if (baseAmount < 50000000) { rate = 0.5; cap = 200000; rateLabel = '0.5% (한도 20만원)'; }
+      else if (baseAmount < 100000000) { rate = 0.4; cap = 300000; rateLabel = '0.4% (한도 30만원)'; }
+      else if (baseAmount < 600000000) { rate = 0.3; rateLabel = '0.3%'; }
+      else if (baseAmount < 1200000000) { rate = 0.4; rateLabel = '0.4%'; }
+      else if (baseAmount < 1500000000) { rate = 0.5; rateLabel = '0.5%'; }
+      else { rate = 0.6; rateLabel = '0.6%'; }
+    } else {
+      // 주택 매매
+      if (baseAmount < 50000000) { rate = 0.6; cap = 250000; rateLabel = '0.6% (한도 25만원)'; }
+      else if (baseAmount < 200000000) { rate = 0.5; cap = 800000; rateLabel = '0.5% (한도 80만원)'; }
+      else if (baseAmount < 900000000) { rate = 0.4; rateLabel = '0.4%'; }
+      else if (baseAmount < 1200000000) { rate = 0.5; rateLabel = '0.5%'; }
+      else if (baseAmount < 1500000000) { rate = 0.6; rateLabel = '0.6%'; }
+      else { rate = 0.7; rateLabel = '0.7%'; }
+    }
+  }
+
+  var fee = Math.floor(baseAmount * rate / 100);
+  if (cap > 0 && fee > cap) fee = cap;
+  var vat = Math.floor(fee * 10 / 100);
+  var total = fee + vat;
+
+  var dealLabel = deal === 'buy' ? '매매' : deal === 'jeonse' ? '전세' : '월세';
+  var typeLabel = propType === 'house' ? '주택' : propType === 'officetel' ? '오피스텔' : '상가/토지';
+
+  var rows = [
+    resultRow('거래 유형', dealLabel + ' / ' + typeLabel),
+    resultRow('거래금액', fmtWon(baseAmount) + '원' + (deal === 'monthly' ? ' (환산)' : '')),
+    resultRow('적용 요율', rateLabel),
+    resultRow('중개수수료', fmtWon(fee) + '원'),
+    resultRow('부가세 (10%)', fmtWon(vat) + '원'),
+    resultRow('총 예상 비용', fmtWon(total) + '원', 'total')
+  ];
+
+  if (deal === 'monthly') {
+    rows.splice(1, 0, resultRow('보증금', fmtWon(price) + '원'));
+    rows.splice(2, 0, resultRow('월세', fmtWon(monthlyRent) + '원'));
+  }
+
+  var explainText = typeLabel + ' ' + dealLabel + ' 거래 시 법정 중개수수료 상한입니다. ' +
+    '실제 수수료는 이 한도 내에서 중개사와 협의 가능합니다. ' +
+    (cap > 0 ? '이 금액 구간은 한도액 ' + fmtWon(cap) + '원이 적용됩니다. ' : '') +
+    '부가세는 중개사가 일반과세자인 경우 별도 부과됩니다 (간이과세자는 부가세 없음).';
+
+  var consultMsg = '중개수수료 계산 결과로 상담 요청합니다.\n'
+    + '━━━━━━━━━━━━━━\n'
+    + '거래유형: ' + dealLabel + ' / ' + typeLabel + '\n'
+    + '거래금액: ' + fmtWon(baseAmount) + '원\n'
+    + (deal === 'monthly' ? '보증금: ' + fmtWon(price) + '원 / 월세: ' + fmtWon(monthlyRent) + '원\n' : '')
+    + '요율: ' + rateLabel + '\n'
+    + '중개수수료: ' + fmtWon(fee) + '원\n'
+    + '부가세: ' + fmtWon(vat) + '원\n'
+    + '총 비용: ' + fmtWon(total) + '원\n'
+    + '━━━━━━━━━━━━━━\n'
+    + '중개수수료 관련 추가 질문이 있습니다.';
+
+  var tips = '';
+  if (propType === 'officetel') {
+    tips = tipBox('<strong>주거용 오피스텔 요율 적용 조건:</strong> 전용면적 85㎡ 이하, 전용 부엌·화장실·목욕시설을 갖춘 경우에 해당합니다. 조건 미충족 시 상가/토지 요율(0.9%)이 적용될 수 있습니다.');
+  }
+
+  document.getElementById('bk-result').innerHTML =
+    resultBox(rows, '* 공인중개사법 시행규칙 기준 상한요율입니다. 실제 수수료는 협의 가능합니다.', '2021년 개정 기준 (공인중개사법 시행규칙)') + explanationBox(explainText) + tips + consultButton(consultMsg);
+}
+</script>
+</body>
+</html>

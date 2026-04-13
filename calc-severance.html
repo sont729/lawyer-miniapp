@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>퇴직금/주휴수당 계산기 - 법률 AI</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css?v=7">
+</head>
+<body>
+
+<div class="page-header">
+  <button class="back-btn" onclick="location.href='calc-index.html'">← 뒤로</button>
+  <h1>퇴직금 / 주휴수당</h1>
+</div>
+
+<div class="container fade-in">
+  <div class="card">
+    <div class="form-group">
+      <label>계산 유형</label>
+      <div class="radio-group" id="sev-mode">
+        <div class="radio-pill active" onclick="setSevMode('severance',this)">퇴직금</div>
+        <div class="radio-pill" onclick="setSevMode('weekly',this)">주휴수당</div>
+      </div>
+    </div>
+
+    <!-- 퇴직금 섹션 -->
+    <div id="sev-section">
+      <div class="form-group">
+        <label>입사일</label>
+        <input type="text" id="sev-start" placeholder="2023-01-01">
+      </div>
+      <div class="form-group">
+        <label>퇴사일</label>
+        <input type="text" id="sev-end" placeholder="2026-04-13">
+      </div>
+      <div class="form-group">
+        <label>최근 3개월 월급여 총액 (원, 세전)</label>
+        <input type="text" id="sev-salary3" inputmode="numeric" placeholder="예: 10,500,000 (3개월 합)" data-comma>
+        <div class="hint">퇴직 전 3개월간 받은 급여의 합계 (상여금/수당 포함)</div>
+      </div>
+      <div class="form-group">
+        <label>미사용 연차일수</label>
+        <input type="text" id="sev-annual" inputmode="numeric" placeholder="0" value="0">
+        <div class="hint">미사용 연차수당이 평균임금에 포함됩니다</div>
+      </div>
+      <button class="btn btn-primary" onclick="calcSeverance()">퇴직금 계산</button>
+    </div>
+
+    <!-- 주휴수당 섹션 -->
+    <div id="weekly-section" style="display:none">
+      <div class="form-group">
+        <label>시급 (원)</label>
+        <input type="text" id="wk-hourly" inputmode="numeric" placeholder="예: 10,320" data-comma>
+        <div class="hint">2026년 최저시급: 10,320원</div>
+      </div>
+      <div class="form-group">
+        <label>주 소정근로시간</label>
+        <input type="text" id="wk-hours" inputmode="numeric" placeholder="예: 20" value="40">
+        <div class="hint">주 15시간 이상 근무 시 주휴수당 발생</div>
+      </div>
+      <button class="btn btn-primary" onclick="calcWeekly()">주휴수당 계산</button>
+    </div>
+
+    <div id="sev-result"></div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>홈</span></a>
+  <a href="consult.html"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/></svg><span>상담</span></a>
+  <a href="calc-index.html" class="active"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 14h-2v-4H7v-2h6V7h2v4h4v2h-4v4z"/></svg><span>계산기</span></a>
+  <a href="lawsuit.html"><svg viewBox="0 0 24 24"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg><span>소송비용</span></a>
+  <a href="docs.html"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg><span>문서작성</span></a>
+</nav>
+
+<script src="shared.js?v=7"></script>
+<script>
+setupTelegramBackButton(false);
+
+function setSevMode(mode, el) {
+  document.querySelectorAll('#sev-mode .radio-pill').forEach(function(p) { p.classList.remove('active'); });
+  el.classList.add('active');
+  document.getElementById('sev-section').style.display = mode === 'severance' ? 'block' : 'none';
+  document.getElementById('weekly-section').style.display = mode === 'weekly' ? 'block' : 'none';
+  document.getElementById('sev-result').innerHTML = '';
+}
+
+function calcSeverance() {
+  var startStr = document.getElementById('sev-start').value.trim();
+  var endStr = document.getElementById('sev-end').value.trim();
+  var salary3 = parseWon(document.getElementById('sev-salary3').value);
+  var unusedDays = parseInt(document.getElementById('sev-annual').value) || 0;
+  if (!startStr || !endStr) { alert('입사일과 퇴사일을 입력해주세요.'); return; }
+  if (salary3 <= 0) { alert('최근 3개월 급여 총액을 입력해주세요.'); return; }
+
+  var startDate = new Date(startStr);
+  var endDate = new Date(endStr);
+  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) { alert('올바른 날짜 형식(YYYY-MM-DD)으로 입력해주세요.'); return; }
+
+  var totalDays = dateDiffDays(startStr, endStr);
+  if (totalDays < 365) { alert('퇴직금은 1년 이상 근무 시 발생합니다 (현재 ' + totalDays + '일).'); return; }
+
+  // 최근 3개월 일수 계산 (퇴사일 기준 3개월 전)
+  var threeMonthsAgo = new Date(endDate);
+  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+  var days3m = dateDiffDays(threeMonthsAgo.toISOString().slice(0,10), endStr);
+
+  // 미사용 연차수당: 연간 발생분의 3/12만 평균임금에 산입 (대법원 2009다86246)
+  var dailyAvg = salary3 / days3m;
+  var annualPayFull = Math.floor(dailyAvg * unusedDays);
+  var annualPay = Math.floor(annualPayFull * 3 / 12);
+  var totalWage3m = salary3 + annualPay;
+  var finalDailyAvg = totalWage3m / days3m;
+
+  // 퇴직금 = 1일 평균임금 x 30 x (재직일수 / 365)
+  var severancePay = Math.floor(finalDailyAvg * 30 * totalDays / 365);
+
+  var years = Math.floor(totalDays / 365);
+  var remainDays = totalDays % 365;
+
+  var rows = [
+    resultRow('재직기간', years + '년 ' + remainDays + '일 (' + totalDays + '일)'),
+    resultRow('최근 3개월 급여', fmtWon(salary3) + '원'),
+    resultRow('3개월 일수', days3m + '일'),
+    resultRow('1일 평균임금', fmtWon(Math.floor(dailyAvg)) + '원')
+  ];
+  if (unusedDays > 0) {
+    rows.push(resultRow('미사용 연차수당 (연간)', fmtWon(annualPayFull) + '원'));
+    rows.push(resultRow('평균임금 산입분 (3/12)', fmtWon(annualPay) + '원'));
+    rows.push(resultRow('보정 1일 평균임금', fmtWon(Math.floor(finalDailyAvg)) + '원'));
+  }
+  rows.push(resultRow('퇴직금', fmtWon(severancePay) + '원', 'total'));
+
+  var explainText = '퇴직금 = 1일 평균임금(' + fmtWon(Math.floor(finalDailyAvg)) + '원) x 30일 x ' +
+    totalDays + '일/365일. 근로기준법 제34조에 따라 1년 이상 근무한 근로자에게 ' +
+    '계속근로기간 1년에 대해 30일분의 평균임금을 퇴직금으로 지급해야 합니다. ' +
+    '상여금, 연장근로수당, 미사용 연차수당 등이 평균임금에 포함됩니다.';
+
+  var tips = tipBox('<strong>퇴직금을 안 받으셨나요?</strong> 퇴직금 미지급은 근로기준법 위반입니다. 퇴직일로부터 14일 이내 지급이 원칙이며, 미지급 시 연 20% 지연이자가 발생합니다.');
+
+  var consultMsg = '퇴직금 계산 결과로 상담 요청합니다.\n'
+    + '━━━━━━━━━━━━━━\n'
+    + '재직기간: ' + years + '년 ' + remainDays + '일\n'
+    + '최근 3개월 급여: ' + fmtWon(salary3) + '원\n'
+    + '1일 평균임금: ' + fmtWon(Math.floor(finalDailyAvg)) + '원\n'
+    + (unusedDays > 0 ? '미사용 연차: ' + unusedDays + '일\n' : '')
+    + '퇴직금: ' + fmtWon(severancePay) + '원\n'
+    + '━━━━━━━━━━━━━━\n'
+    + '퇴직금 관련 추가 질문이 있습니다.';
+
+  document.getElementById('sev-result').innerHTML =
+    resultBox(rows, '* 평균임금은 퇴직 전 3개월간 지급된 임금 총액 기준입니다. 상여금/수당 포함 여부에 따라 달라질 수 있습니다.', '근로기준법 제34조, 제2조') + explanationBox(explainText) + tips + consultButton(consultMsg);
+}
+
+function calcWeekly() {
+  var hourly = parseWon(document.getElementById('wk-hourly').value);
+  var weeklyHours = parseFloat(document.getElementById('wk-hours').value) || 0;
+  if (hourly <= 0) { alert('시급을 입력해주세요.'); return; }
+  if (weeklyHours < 15) { alert('주 15시간 미만 근무 시 주휴수당이 발생하지 않습니다.'); return; }
+
+  // 주휴시간 = (주 소정근로시간 / 40) x 8, 최대 8시간
+  var weeklyHolidayHours = Math.min((weeklyHours / 40) * 8, 8);
+  var weeklyPay = Math.floor(hourly * weeklyHolidayHours);
+  var monthlyPay = Math.floor(weeklyPay * 365 / 7 / 12);
+
+  // 시급에 주휴수당 포함한 실질 시급
+  var effectiveHourly = Math.floor(hourly * (weeklyHours + weeklyHolidayHours) / weeklyHours);
+
+  // 월 총 예상 급여 (근무시간 + 주휴수당)
+  var monthlyWork = Math.floor(hourly * weeklyHours * 365 / 7 / 12);
+  var monthlyTotal = monthlyWork + monthlyPay;
+
+  var rows = [
+    resultRow('시급', fmtWon(hourly) + '원'),
+    resultRow('주 소정근로시간', weeklyHours + '시간'),
+    resultRow('주휴시간', weeklyHolidayHours.toFixed(1) + '시간'),
+    resultRow('주휴수당 (주)', fmtWon(weeklyPay) + '원'),
+    resultRow('주휴수당 (월)', fmtWon(monthlyPay) + '원'),
+    resultRow('', ''),
+    resultRow('월 근로수당', fmtWon(monthlyWork) + '원'),
+    resultRow('월 주휴수당', fmtWon(monthlyPay) + '원'),
+    resultRow('월 총 예상 급여', fmtWon(monthlyTotal) + '원', 'total')
+  ];
+
+  var explainText = '주휴수당은 주 15시간 이상 근무하는 근로자에게 유급 주휴일(1일)에 대해 지급하는 수당입니다. ' +
+    '주 ' + weeklyHours + '시간 근무 시 주휴시간은 ' + weeklyHolidayHours.toFixed(1) + '시간이며, ' +
+    '시급 ' + fmtWon(hourly) + '원 기준 주 ' + fmtWon(weeklyPay) + '원입니다. ' +
+    '주휴수당 포함 실질 시급은 ' + fmtWon(effectiveHourly) + '원입니다.';
+
+  var tips = tipBox('<strong>주휴수당을 못 받고 있나요?</strong> 주 15시간 이상 근무하면 아르바이트도 주휴수당을 받을 권리가 있습니다. 미지급 시 노동부에 진정 가능합니다.');
+
+  var consultMsg = '주휴수당 계산 결과로 상담 요청합니다.\n'
+    + '━━━━━━━━━━━━━━\n'
+    + '시급: ' + fmtWon(hourly) + '원\n'
+    + '주 근로시간: ' + weeklyHours + '시간\n'
+    + '주휴시간: ' + weeklyHolidayHours.toFixed(1) + '시간\n'
+    + '주휴수당(주): ' + fmtWon(weeklyPay) + '원\n'
+    + '주휴수당(월): ' + fmtWon(monthlyPay) + '원\n'
+    + '월 총 예상급여: ' + fmtWon(monthlyTotal) + '원\n'
+    + '━━━━━━━━━━━━━━\n'
+    + '주휴수당 관련 추가 질문이 있습니다.';
+
+  document.getElementById('sev-result').innerHTML =
+    resultBox(rows, '* 주 소정근로시간 모두 개근 시 기준입니다.', '근로기준법 제55조') + explanationBox(explainText) + tips + consultButton(consultMsg);
+}
+</script>
+</body>
+</html>

@@ -195,6 +195,15 @@ select{
 }
 .explain-box.open .explain-body{max-height:500px;padding:0 14px 14px}
 
+/* ===== TIP BOX ===== */
+.tip-box{
+  background:#FFF8E1;border-radius:var(--radius-sm);
+  padding:12px 14px;margin-top:12px;font-size:13px;
+  color:#5D4037;line-height:1.6;
+  border-left:3px solid #FFB300;
+}
+.tip-box strong{color:#E65100;font-weight:700}
+
 /* ===== BOTTOM NAV ===== */
 .bottom-nav{
   position:fixed;bottom:0;left:0;right:0;z-index:100;

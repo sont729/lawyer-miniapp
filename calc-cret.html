@@ -22,10 +22,21 @@
     </div>
     <div class="form-group">
       <label>주택 유형</label>
-      <select id="cret-type">
+      <select id="cret-type" onchange="toggleCorpOpts()">
         <option value="1house" selected>1세대 1주택</option>
-        <option value="multi">다주택/법인</option>
+        <option value="2house">2주택</option>
+        <option value="3house">3주택 이상</option>
+        <option value="corp">법인</option>
       </select>
+    </div>
+    <div id="cret-corp-opts" style="display:none">
+      <div class="form-group">
+        <label>법인 보유 주택 수</label>
+        <select id="cret-corp-count">
+          <option value="2" selected>2주택 이하 (2.7%)</option>
+          <option value="3">3주택 이상 (5.0%)</option>
+        </select>
+      </div>
     </div>
     <button class="btn btn-primary" onclick="calcCRET()">계산하기</button>
     <div id="cret-result"></div>
@@ -44,6 +55,11 @@
 <script>
 setupTelegramBackButton(false);
 
+function toggleCorpOpts() {
+  var isCorp = document.getElementById('cret-type').value === 'corp';
+  document.getElementById('cret-corp-opts').style.display = isCorp ? 'block' : 'none';
+}
+
 function calcCRET() {
   var assessed = parseWon(document.getElementById('cret-value').value);
   var houseType = document.getElementById('cret-type').value;
@@ -53,12 +69,72 @@ function calcCRET() {
   var fairRatio = cretCfg ? cretCfg.fairMarketRatio : 60;
   var oneHouseBase = cretCfg ? cretCfg.baseDeduction.oneHouse : 1200000000;
   var multiHouseBase = cretCfg ? cretCfg.baseDeduction.multiHouse : 900000000;
-  var baseDeduct = (houseType === '1house') ? oneHouseBase : multiHouseBase;
+  var corpBase = cretCfg && cretCfg.baseDeduction.corporate !== undefined ? cretCfg.baseDeduction.corporate : 0;
+  var baseDeduct;
+  if (houseType === '1house') baseDeduct = oneHouseBase;
+  else if (houseType === 'corp') baseDeduct = corpBase;
+  else baseDeduct = multiHouseBase;
   // 종부세법: (공시가격 - 기본공제) × 공정시장가액비율
   var afterDeduct = Math.max(0, assessed - baseDeduct);
   var taxable = Math.floor(afterDeduct * fairRatio / 100);
 
-  var rateBrackets = cretCfg ? (houseType === '1house' ? cretCfg.oneHouseRates : cretCfg.multiHouseRates) : null;
+  // 법인: 정률 과세 (2주택 이하 2.7%, 3주택 이상 5.0%)
+  var isCorp = (houseType === 'corp');
+  if (isCorp) {
+    var corpCount = document.getElementById('cret-corp-count').value;
+    var corpRate;
+    if (cretCfg && cretCfg.corporateRates) {
+      corpRate = corpCount === '3' ? (cretCfg.corporateRates.threeOrMore || 5.0) : (cretCfg.corporateRates.twoOrLess || 2.7);
+    } else {
+      corpRate = corpCount === '3' ? 5.0 : 2.7; // fallback
+    }
+    var rate = Math.round(corpRate * 100);
+    var progDeduct = 0;
+    var tax = Math.floor(taxable * rate / 10000);
+    if (tax < 0) tax = 0;
+    var nongSpec = Math.floor(tax * 20 / 100);
+    var typeLabels = { '1house': '1세대 1주택', '2house': '2주택', '3house': '3주택 이상', 'corp': '법인' };
+    var typeLabel = typeLabels[houseType];
+    var baseLabel = fmtWon(baseDeduct) + ' (' + typeLabel + ')';
+    var rows = [
+      resultRow('공시가격 합계', fmtWon(assessed) + '원'),
+      resultRow('기본공제', fmtWon(baseDeduct) + '원 (법인: 공제 없음)'),
+      resultRow('공정시장가액비율', fairRatio + '%'),
+      resultRow('과세표준', fmtWon(taxable) + '원'),
+      resultRow('세율', corpRate + '% (법인 정률)'),
+      resultRow('종합부동산세', fmtWon(tax) + '원'),
+      resultRow('농어촌특별세 (20%)', fmtWon(nongSpec) + '원'),
+      resultRow('산출세액 (재산세 공제 전)', fmtWon(tax + nongSpec) + '원', 'total')
+    ];
+    var threeOrMoreRate = (cretCfg && cretCfg.corporateRates) ? (cretCfg.corporateRates.threeOrMore || 5.0) : 5.0;
+    var explainText = '법인 소유 주택은 기본공제가 없으며 ' + corpRate + '% 정률로 과세됩니다. ' +
+      '3주택 이상 법인은 ' + threeOrMoreRate + '% 적용될 수 있습니다. 실제 납부세액은 이미 낸 재산세를 공제한 금액입니다.';
+    var startCode = 'ce_' + assessed + '_' + houseType;
+    var consultMsg = '종합부동산세 계산 결과로 상담 요청합니다.\n'
+      + '━━━━━━━━━━━━━━\n'
+      + '공시가격: ' + fmtWon(assessed) + '원\n'
+      + '주택 유형: ' + typeLabel + '\n'
+      + '과세표준: ' + fmtWon(taxable) + '원\n'
+      + '세율: ' + corpRate + '% (법인 정률)\n'
+      + '종합부동산세: ' + fmtWon(tax) + '원\n'
+      + '농어촌특별세: ' + fmtWon(nongSpec) + '원\n'
+      + '총 납부액: ' + fmtWon(tax + nongSpec) + '원\n'
+      + '━━━━━━━━━━━━━━\n'
+      + '감면 방법 알려주세요.';
+    document.getElementById('cret-result').innerHTML =
+      resultBox(rows, undefined, getLawRef('comprehensiveRealEstateTax')) + explanationBox(explainText) + consultButton(consultMsg, startCode);
+    return;
+  }
+
+  // 개인: 1주택/2주택/3주택 이상별 세율표
+  var rateBrackets;
+  if (cretCfg) {
+    if (houseType === '1house') rateBrackets = cretCfg.oneHouseRates;
+    else if (houseType === '3house' && cretCfg.threeHouseRates) rateBrackets = cretCfg.threeHouseRates;
+    else rateBrackets = cretCfg.multiHouseRates;
+  } else {
+    rateBrackets = null;
+  }
   var rate = 0, progDeduct = 0;
   if (rateBrackets) {
     var prevLimit = 0;
@@ -90,7 +166,17 @@ function calcCRET() {
       else if (taxable <= 2500000000) { rate = 130; progDeduct = 6000000; }
       else if (taxable <= 5000000000) { rate = 150; progDeduct = 11000000; }
       else { rate = 200; progDeduct = 36000000; }
+    } else if (houseType === '3house') {
+      // 3주택 이상 fallback
+      if (taxable <= 300000000) { rate = 50; progDeduct = 0; }
+      else if (taxable <= 600000000) { rate = 70; progDeduct = 600000; }
+      else if (taxable <= 1200000000) { rate = 100; progDeduct = 2400000; }
+      else if (taxable <= 2500000000) { rate = 200; progDeduct = 14400000; }
+      else if (taxable <= 5000000000) { rate = 300; progDeduct = 39400000; }
+      else if (taxable <= 9400000000) { rate = 400; progDeduct = 89400000; }
+      else { rate = 500; progDeduct = 183400000; }
     } else {
+      // 2주택 이하 fallback
       if (taxable <= 300000000) { rate = 50; progDeduct = 0; }
       else if (taxable <= 600000000) { rate = 70; progDeduct = 600000; }
       else if (taxable <= 1200000000) { rate = 100; progDeduct = 2400000; }
@@ -105,30 +191,32 @@ function calcCRET() {
   if (tax < 0) tax = 0;
   var nongSpec = Math.floor(tax * 20 / 100);
 
-  var baseLabel = houseType === '1house' ? fmtWon(oneHouseBase) + ' (1세대 1주택)' : fmtWon(multiHouseBase) + ' (다주택)';
+  var typeLabels = { '1house': '1세대 1주택', '2house': '2주택', '3house': '3주택 이상', 'corp': '법인' };
+  var typeLabel = typeLabels[houseType] || houseType;
+  var baseLabel = fmtWon(baseDeduct) + ' (' + typeLabel + ')';
 
   var rows = [
     resultRow('공시가격 합계', fmtWon(assessed) + '원'),
     resultRow('공정시장가액비율', fairRatio + '%'),
     resultRow('공정시장가액', fmtWon(taxable) + '원'),
-    resultRow('기본공제', fmtWon(baseDeduct) + '원 (' + baseLabel + ')'),
+    resultRow('기본공제', fmtWon(baseDeduct) + '원 (' + typeLabel + ')'),
     resultRow('과세표준', fmtWon(taxable) + '원'),
     resultRow('세율', (rate / 100).toFixed(1) + '%'),
     resultRow('누진공제', fmtWon(progDeduct) + '원'),
     resultRow('종합부동산세', fmtWon(tax) + '원'),
     resultRow('농어촌특별세 (20%)', fmtWon(nongSpec) + '원'),
-    resultRow('총 납부액', fmtWon(tax + nongSpec) + '원', 'total')
+    resultRow('산출세액 (재산세 공제 전)', fmtWon(tax + nongSpec) + '원', 'total')
   ];
 
   var explainText = '공시가격 ' + fmtWon(assessed) + '원에 공정시장가액비율 60% 적용, 기본공제 ' +
     fmtWon(baseDeduct) + ' 차감. 매년 12월에 부과되며 재산세와 별도로 납부합니다. ' +
     '1세대 1주택자는 고령자 세액공제(60세 이상), 장기보유 세액공제(5년 이상) 추가 적용이 가능합니다.';
 
-  var startCode = 'ce_' + assessed + '_' + (document.getElementById('cret-type').value==='one'?1:0);
+  var startCode = 'ce_' + assessed + '_' + houseType;
   var consultMsg = '종합부동산세 계산 결과로 상담 요청합니다.\n'
     + '━━━━━━━━━━━━━━\n'
     + '공시가격: ' + fmtWon(assessed) + '원\n'
-    + '주택 유형: ' + (houseType === '1house' ? '1세대 1주택' : '다주택/법인') + '\n'
+    + '주택 유형: ' + typeLabel + '\n'
     + '공정시장가액비율: ' + fairRatio + '%\n'
     + '공정시장가액: ' + fmtWon(taxable) + '원\n'
     + '기본공제: ' + fmtWon(baseDeduct) + '원\n'

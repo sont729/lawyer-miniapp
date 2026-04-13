@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>법정상속지분/유류분 계산기 - 법률 AI</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css?v=7">
+</head>
+<body>
+
+<div class="page-header">
+  <button class="back-btn" onclick="location.href='calc-index.html'">← 뒤로</button>
+  <h1>법정지분 / 유류분</h1>
+</div>
+
+<div class="container fade-in">
+  <div class="card">
+    <div class="form-group">
+      <label>총 상속재산 (원)</label>
+      <input type="text" id="ls-estate" inputmode="numeric" placeholder="예: 1,000,000,000" data-comma>
+    </div>
+    <div class="checkbox-group">
+      <input type="checkbox" id="ls-spouse" checked>
+      <label for="ls-spouse">배우자 생존</label>
+    </div>
+    <div class="form-group">
+      <label>자녀 수</label>
+      <select id="ls-children" onchange="updateBeneficiaryOpts()">
+        <option value="0">0명 (자녀 없음)</option>
+        <option value="1">1명</option>
+        <option value="2" selected>2명</option>
+        <option value="3">3명</option>
+        <option value="4">4명</option>
+        <option value="5">5명</option>
+      </select>
+    </div>
+
+    <h3 class="mt-16">유류분 계산 (선택)</h3>
+    <div class="form-group">
+      <label>특별수익자 (재산을 독차지한 사람)</label>
+      <select id="ls-beneficiary">
+        <option value="none" selected>해당 없음</option>
+        <option value="child1">자녀 1</option>
+        <option value="child2">자녀 2</option>
+        <option value="spouse">배우자</option>
+      </select>
+      <div class="hint">유언/생전증여로 재산 대부분을 받은 사람을 선택</div>
+    </div>
+    <div class="form-group">
+      <label>특별수익 금액 (원, 생전 증여 포함)</label>
+      <input type="text" id="ls-gift" inputmode="numeric" placeholder="0" data-comma>
+      <div class="hint">피상속인이 생전에 특별수익자에게 증여한 금액</div>
+    </div>
+
+    <button class="btn btn-primary" onclick="calcLegalShare()">계산하기</button>
+    <div id="ls-result"></div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>홈</span></a>
+  <a href="consult.html"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/></svg><span>상담</span></a>
+  <a href="calc-index.html" class="active"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 14h-2v-4H7v-2h6V7h2v4h4v2h-4v4z"/></svg><span>계산기</span></a>
+  <a href="lawsuit.html"><svg viewBox="0 0 24 24"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg><span>소송비용</span></a>
+  <a href="docs.html"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg><span>문서작성</span></a>
+</nav>
+
+<script src="shared.js?v=7"></script>
+<script>
+setupTelegramBackButton(false);
+
+function updateBeneficiaryOpts() {
+  var n = parseInt(document.getElementById('ls-children').value, 10);
+  var sel = document.getElementById('ls-beneficiary');
+  var cur = sel.value;
+  sel.innerHTML = '<option value="none">해당 없음</option>';
+  for (var i = 1; i <= n; i++) {
+    sel.innerHTML += '<option value="child' + i + '">자녀 ' + i + '</option>';
+  }
+  if (document.getElementById('ls-spouse').checked) {
+    sel.innerHTML += '<option value="spouse">배우자</option>';
+  }
+  // 이전 선택 복원 (가능하면)
+  if (sel.querySelector('option[value="' + cur + '"]')) sel.value = cur;
+  else sel.value = 'none';
+}
+updateBeneficiaryOpts();
+
+function calcLegalShare() {
+  var estate = parseWon(document.getElementById('ls-estate').value);
+  var spouseAlive = document.getElementById('ls-spouse').checked;
+  var numChildren = parseInt(document.getElementById('ls-children').value, 10);
+  var beneficiary = document.getElementById('ls-beneficiary').value;
+  var giftAmount = parseWon(document.getElementById('ls-gift').value);
+  if (estate <= 0) { alert('상속재산을 입력해주세요.'); return; }
+
+  // 법정상속비율 계산 (민법 제1009조)
+  // 배우자: 자녀의 1.5배
+  var shares = [];
+  var totalRatio = 0;
+
+  if (spouseAlive && numChildren > 0) {
+    totalRatio = 1.5 + numChildren;
+    shares.push({ name: '배우자', ratio: 1.5, legalShare: 0, reservedShare: 0 });
+    for (var i = 1; i <= numChildren; i++) {
+      shares.push({ name: '자녀 ' + i, ratio: 1, legalShare: 0, reservedShare: 0 });
+    }
+  } else if (spouseAlive && numChildren === 0) {
+    totalRatio = 1;
+    shares.push({ name: '배우자', ratio: 1, legalShare: 0, reservedShare: 0 });
+  } else {
+    // 배우자 없음
+    totalRatio = numChildren;
+    for (var i = 1; i <= numChildren; i++) {
+      shares.push({ name: '자녀 ' + i, ratio: 1, legalShare: 0, reservedShare: 0 });
+    }
+  }
+
+  // 법정상속분 금액
+  for (var i = 0; i < shares.length; i++) {
+    shares[i].legalShare = Math.floor(estate * shares[i].ratio / totalRatio);
+    // 유류분: 배우자/직계비속 = 법정상속분의 1/2
+    shares[i].reservedShare = Math.floor(shares[i].legalShare / 2);
+  }
+
+  var rows = [
+    resultRow('총 상속재산', fmtWon(estate) + '원'),
+    resultRow('', '')
+  ];
+  rows.push(resultRow('법정상속분', '', 'section-title'));
+
+  var shareDetails = [];
+  for (var i = 0; i < shares.length; i++) {
+    var s = shares[i];
+    var pct = (s.ratio / totalRatio * 100).toFixed(1);
+    rows.push(resultRow(s.name + ' (' + pct + '%)', fmtWon(s.legalShare) + '원'));
+    shareDetails.push(s.name + ' ' + fmtWon(s.legalShare) + '원');
+  }
+
+  rows.push(resultRow('', ''));
+  rows.push(resultRow('유류분 (최소 보장분)', '', 'section-title'));
+  for (var i = 0; i < shares.length; i++) {
+    rows.push(resultRow(shares[i].name, fmtWon(shares[i].reservedShare) + '원'));
+  }
+
+  // 유류분 반환 청구액 계산
+  var claimRows = [];
+  if (beneficiary !== 'none') {
+    var totalWithGift = estate + giftAmount;
+    rows.push(resultRow('', ''));
+    rows.push(resultRow('유류분 반환 청구 시뮬레이션', '', 'section-title'));
+    if (giftAmount > 0) {
+      rows.push(resultRow('상속재산 + 생전증여', fmtWon(totalWithGift) + '원'));
+    }
+
+    // 유류분 산정 기초재산으로 재계산
+    for (var i = 0; i < shares.length; i++) {
+      var baseShare = Math.floor(totalWithGift * shares[i].ratio / totalRatio);
+      var reservedOnBase = Math.floor(baseShare / 2);
+
+      var isBeneficiary = false;
+      if (beneficiary === 'spouse' && shares[i].name === '배우자') isBeneficiary = true;
+      if (beneficiary.indexOf('child') === 0) {
+        var childNum = parseInt(beneficiary.replace('child', ''), 10);
+        if (shares[i].name === '자녀 ' + childNum) isBeneficiary = true;
+      }
+
+      if (!isBeneficiary) {
+        // 이 상속인이 받은 게 0이라고 가정 (특별수익자가 독차지)
+        var claimable = Math.max(0, reservedOnBase);
+        if (claimable > 0) {
+          rows.push(resultRow(shares[i].name + ' 청구 가능액', fmtWon(claimable) + '원', 'total'));
+          claimRows.push(shares[i].name + ': ' + fmtWon(claimable) + '원');
+        }
+      }
+    }
+  }
+
+  var explainText = '민법 제1009조에 따라 배우자는 자녀의 1.5배 비율로 상속받습니다. ' +
+    '유류분은 법정상속분의 1/2로, 유언이나 생전증여로 상속분이 침해되었을 때 최소한 보장되는 금액입니다. ' +
+    '유류분 반환 청구는 상속 개시를 안 날부터 1년, 상속 개시일부터 10년 이내에 해야 합니다 (민법 제1117조).';
+
+  var tips = tipBox('<strong>상속 분쟁이 있으신가요?</strong> 유류분 반환 청구는 복잡한 법적 절차가 필요합니다. 상담에서 구체적인 상황을 말씀해주시면 대응 방법을 안내해드립니다.');
+
+  var consultMsg = '법정상속지분/유류분 계산 결과로 상담 요청합니다.\n'
+    + '━━━━━━━━━━━━━━\n'
+    + '상속재산: ' + fmtWon(estate) + '원\n'
+    + '상속인: ' + (spouseAlive ? '배우자 + ' : '') + '자녀 ' + numChildren + '명\n'
+    + '법정상속분: ' + shareDetails.join(', ') + '\n'
+    + (claimRows.length > 0 ? '유류분 청구 가능액: ' + claimRows.join(', ') + '\n' : '')
+    + '━━━━━━━━━━━━━━\n'
+    + '상속 분할/유류분 관련 상담 부탁드립니다.';
+
+  document.getElementById('ls-result').innerHTML =
+    resultBox(rows, '* 채무, 기여분, 특별수익 등에 따라 실제 분할 금액은 달라질 수 있습니다.', '민법 제1009조, 제1112조') + explanationBox(explainText) + tips + consultButton(consultMsg);
+}
+</script>
+</body>
+</html>

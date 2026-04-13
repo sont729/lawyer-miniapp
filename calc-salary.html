@@ -80,18 +80,23 @@ function calcSalary() {
 
   // 4대 보험 (employee share) - from config with fallback
   var cfg = TAX_CONFIG ? TAX_CONFIG.salary.insurance : null;
-  var pensionCap = cfg ? cfg.nationalPension.monthlyCapBase : 6170000;
-  var pensionFrac = cfg ? cfg.nationalPension.rateFraction : [45, 1000];
-  var healthFrac = cfg ? cfg.healthInsurance.rateFraction : [3545, 100000];
-  var longCareFrac = cfg ? cfg.longTermCare.rateFraction : [1295, 10000];
+  var pensionCap = cfg ? cfg.nationalPension.monthlyCapBase : 6370000;
+  var pensionFrac = cfg ? cfg.nationalPension.rateFraction : [475, 10000];
+  var healthFrac = cfg ? cfg.healthInsurance.rateFraction : [3595, 100000];
+  var longCareFrac = cfg ? cfg.longTermCare.rateFraction : [1314, 10000];
   var employFrac = cfg ? cfg.employmentInsurance.rateFraction : [9, 1000];
 
+  // 4대보험 기준소득: 비과세 제외 (국민연금법 시행령 제5조, 건강보험법 시행령 제33조)
+  var insuranceBase = Math.max(0, monthly - nonTaxable);
   var pensionFloor = 400000; // 국민연금 하한액 (2025.7~2026.6)
-  var pensionBase = Math.max(pensionFloor, Math.min(monthly, pensionCap));
+  var pensionBase = Math.max(pensionFloor, Math.min(insuranceBase, pensionCap));
   var pension = Math.floor(pensionBase * pensionFrac[0] / pensionFrac[1]);
-  var health = Math.floor(monthly * healthFrac[0] / healthFrac[1]);
+  // 건강보험 보수월액 상한 (2026년 기준 약 1.2억)
+  var healthCap = 119625120;
+  var healthBase = Math.min(insuranceBase, healthCap);
+  var health = Math.floor(healthBase * healthFrac[0] / healthFrac[1]);
   var longCare = Math.floor(health * longCareFrac[0] / longCareFrac[1]);
-  var employ = Math.floor(monthly * employFrac[0] / employFrac[1]);
+  var employ = Math.floor(insuranceBase * employFrac[0] / employFrac[1]);
   var totalInsurance = pension + health + longCare + employ;
 
   // Simplified income tax calculation
@@ -126,12 +131,28 @@ function calcSalary() {
     }
   }
 
+  // 소득세법 제47조 제2항: 근로소득공제 한도 2,000만원
+  if (earnedDeduct > 20000000) earnedDeduct = 20000000;
+
   var dependents = parseInt(document.getElementById('sal-dependents').value, 10) || 1;
   var personalDeductAmt = getConfig('incomeTax.personalDeductionPerPerson', 1500000) * dependents;
   var annualTaxBase = Math.max(0, annualTaxable - earnedDeduct - personalDeductAmt);
   var r = applyIncomeTax(annualTaxBase);
-  var stdTaxCredit = getConfig('incomeTax.standardTaxCredit', 70000);
-  var annualTaxAfterCredit = Math.max(0, r.tax - stdTaxCredit);
+  // 근로소득세액공제 (소득세법 제59조)
+  var earnedTaxCredit = 0;
+  if (r.tax <= 1300000) {
+    earnedTaxCredit = Math.floor(r.tax * 55 / 100);
+  } else {
+    earnedTaxCredit = 715000 + Math.floor((r.tax - 1300000) * 30 / 100);
+  }
+  // 총급여별 한도
+  if (annual <= 33000000) earnedTaxCredit = Math.min(earnedTaxCredit, 740000);
+  else if (annual <= 70000000) earnedTaxCredit = Math.min(earnedTaxCredit, 660000);
+  else earnedTaxCredit = Math.min(earnedTaxCredit, 500000);
+
+  // 표준세액공제 (근로소득자 13만원)
+  var stdTaxCredit = 130000;
+  var annualTaxAfterCredit = Math.max(0, r.tax - earnedTaxCredit - stdTaxCredit);
   var monthlyIncomeTax = Math.floor(annualTaxAfterCredit / 12);
   var monthlyLocalTax = Math.floor(monthlyIncomeTax * 10 / 100);
   var totalDeductions = totalInsurance + monthlyIncomeTax + monthlyLocalTax;
@@ -191,8 +212,10 @@ function calcSalary() {
     + '━━━━━━━━━━━━━━\n'
     + '절세/공제 더 받을 수 있는 방법 알려주세요.';
 
+  var tips = tipBox('<strong>만 60세 이상이신가요?</strong> 국민연금 가입 의무가 면제되어 실수령액이 더 높습니다. 상담에서 정확한 금액을 확인해보세요.');
+
   document.getElementById('sal-result').innerHTML =
-    resultBox(rows, undefined, getLawRef('salary')) + explanationBox(explainText) + consultButton(consultMsg, startCode);
+    resultBox(rows, undefined, getLawRef('salary')) + explanationBox(explainText) + tips + consultButton(consultMsg, startCode);
 }
 </script>
 </body>
