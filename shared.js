@@ -194,19 +194,20 @@ function showToast(msg) {
 }
 
 // 메시지 전달 전략:
-// 1) tg.sendData() 시도 — Reply Keyboard로 미니앱을 열었을 때만 동작
-//    (Menu Button/inline은 미지원. t.me?start= 딥링크는 플러그인이 /start를 가로채서 동작 X)
-// 2) sendData가 throw하면 클립보드 fallback
-function trySendData(message) {
-  if (!tg || typeof tg.sendData !== 'function') return false;
-  try {
-    tg.sendData(message);
-    // sendData 성공 시 텔레그램이 자동으로 미니앱을 닫음
-    return true;
-  } catch(e) { return false; }
+// sendData()는 query_id가 있을 때(Reply Keyboard로 열림)만 동작한다.
+// Menu Button(☰)에서는 query_id가 없고, sendData()가 에러를 안 던지고
+// 조용히 실패하는 클라이언트가 있어서 try-catch만으로는 부족하다.
+// → query_id 유무로 확실하게 분기. 없으면 항상 클립보드.
+function canSendData() {
+  return tg && typeof tg.sendData === 'function'
+    && tg.initDataUnsafe && tg.initDataUnsafe.query_id;
 }
 
-function sendToChat(message) {
+function sendToBot(message) {
+  if (canSendData()) {
+    tg.sendData(message);
+    return;
+  }
   copyToClip(message);
   if (tg) {
     showToast('📋 복사 완료! 채팅에 붙여넣기 하세요');
@@ -234,8 +235,7 @@ function doConsult() {
   if (userQ && userQ.value.trim()) {
     message += '\n\n추가 질문: ' + userQ.value.trim();
   }
-  if (trySendData(message)) return;
-  sendToChat(message);
+  sendToBot(message);
 }
 
 
@@ -248,8 +248,7 @@ var _FAQ_ROUTE = {
 };
 
 function goConsult(question) {
-  if (trySendData(question)) return;
-  sendToChat(question);
+  sendToBot(question);
 }
 
 
@@ -284,9 +283,7 @@ var _DOC_ROUTE = {
 };
 
 function requestDoc(docName) {
-  var msg = docName + ' 작성해주세요.';
-  if (trySendData(msg)) return;
-  sendToChat(msg);
+  sendToBot(docName + ' 작성해주세요.');
 }
 
 /* ---------- Telegram Back Button ---------- */
