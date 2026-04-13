@@ -193,9 +193,17 @@ function showToast(msg) {
   setTimeout(function() { d.remove(); }, 2500);
 }
 
-// sendData는 KeyboardButton으로 열었을 때만 작동. MenuButton은 clipboard fallback.
-function canSendData() {
-  try { return tg && tg.initDataUnsafe && tg.initDataUnsafe.query_id; } catch(e) { return false; }
+// Menu Button(☰)으로 열리는 미니앱은 sendData가 동작하지 않으므로
+// `t.me/<bot>?start=<code>` 딥링크로 우회한다. 코드가 없는(자유 텍스트) 케이스만 클립보드로 fallback.
+var BOT_USERNAME = 'onda_lawyer_bot';
+
+function openBotWithCode(startCode) {
+  if (!tg) return false;
+  try {
+    tg.openTelegramLink('https://t.me/' + BOT_USERNAME + '?start=' + startCode);
+    setTimeout(function() { try { tg.close(); } catch(e) {} }, 500);
+    return true;
+  } catch(e) { return false; }
 }
 
 function sendToChat(message) {
@@ -222,15 +230,14 @@ function consultButton(message, startCode) {
 function doConsult() {
   var message = _consultMsg;
   if (!message) { alert('먼저 계산을 실행해주세요.'); return; }
+  // 계산기 start 코드가 있으면 딥링크로 봇에 직접 전달 (Menu Button 호환)
+  if (_consultCode && openBotWithCode(_consultCode)) return;
+  // 코드 없는 케이스(자유 텍스트 + 추가질문)는 클립보드 fallback
   var userQ = document.getElementById('consult-input');
   if (userQ && userQ.value.trim()) {
     message += '\n\n추가 질문: ' + userQ.value.trim();
   }
-  if (canSendData()) {
-    try { tg.sendData(message); } catch(e) { sendToChat(message); }
-  } else {
-    sendToChat(message);
-  }
+  sendToChat(message);
 }
 
 
@@ -244,12 +251,8 @@ var _FAQ_ROUTE = {
 
 function goConsult(question) {
   var code = _FAQ_ROUTE[question];
-  var msg = code ? '/start ' + code : question;
-  if (canSendData()) {
-    try { tg.sendData(msg); } catch(e) { sendToChat(msg); }
-  } else {
-    sendToChat(msg);
-  }
+  if (code && openBotWithCode(code)) return;
+  sendToChat(question);
 }
 
 
@@ -285,12 +288,8 @@ var _DOC_ROUTE = {
 
 function requestDoc(docName) {
   var code = _DOC_ROUTE[docName];
-  var msg = code ? '/start ' + code : docName + ' 작성해주세요.';
-  if (canSendData()) {
-    try { tg.sendData(msg); } catch(e) { sendToChat(msg); }
-  } else {
-    sendToChat(msg);
-  }
+  if (code && openBotWithCode(code)) return;
+  sendToChat(docName + ' 작성해주세요.');
 }
 
 /* ---------- Telegram Back Button ---------- */
