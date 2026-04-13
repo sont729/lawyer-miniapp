@@ -193,15 +193,15 @@ function showToast(msg) {
   setTimeout(function() { d.remove(); }, 2500);
 }
 
-// Menu Button(☰)으로 열리는 미니앱은 sendData가 동작하지 않으므로
-// `t.me/<bot>?start=<code>` 딥링크로 우회한다. 코드가 없는(자유 텍스트) 케이스만 클립보드로 fallback.
-var BOT_USERNAME = 'onda_lawyer_bot';
-
-function openBotWithCode(startCode) {
-  if (!tg) return false;
+// 메시지 전달 전략:
+// 1) tg.sendData() 시도 — Reply Keyboard로 미니앱을 열었을 때만 동작
+//    (Menu Button/inline은 미지원. t.me?start= 딥링크는 플러그인이 /start를 가로채서 동작 X)
+// 2) sendData가 throw하면 클립보드 fallback
+function trySendData(message) {
+  if (!tg || typeof tg.sendData !== 'function') return false;
   try {
-    tg.openTelegramLink('https://t.me/' + BOT_USERNAME + '?start=' + startCode);
-    setTimeout(function() { try { tg.close(); } catch(e) {} }, 500);
+    tg.sendData(message);
+    // sendData 성공 시 텔레그램이 자동으로 미니앱을 닫음
     return true;
   } catch(e) { return false; }
 }
@@ -230,13 +230,11 @@ function consultButton(message, startCode) {
 function doConsult() {
   var message = _consultMsg;
   if (!message) { alert('먼저 계산을 실행해주세요.'); return; }
-  // 계산기 start 코드가 있으면 딥링크로 봇에 직접 전달 (Menu Button 호환)
-  if (_consultCode && openBotWithCode(_consultCode)) return;
-  // 코드 없는 케이스(자유 텍스트 + 추가질문)는 클립보드 fallback
   var userQ = document.getElementById('consult-input');
   if (userQ && userQ.value.trim()) {
     message += '\n\n추가 질문: ' + userQ.value.trim();
   }
+  if (trySendData(message)) return;
   sendToChat(message);
 }
 
@@ -250,8 +248,7 @@ var _FAQ_ROUTE = {
 };
 
 function goConsult(question) {
-  var code = _FAQ_ROUTE[question];
-  if (code && openBotWithCode(code)) return;
+  if (trySendData(question)) return;
   sendToChat(question);
 }
 
@@ -287,9 +284,9 @@ var _DOC_ROUTE = {
 };
 
 function requestDoc(docName) {
-  var code = _DOC_ROUTE[docName];
-  if (code && openBotWithCode(code)) return;
-  sendToChat(docName + ' 작성해주세요.');
+  var msg = docName + ' 작성해주세요.';
+  if (trySendData(msg)) return;
+  sendToChat(msg);
 }
 
 /* ---------- Telegram Back Button ---------- */
