@@ -172,8 +172,21 @@ function explanationBox(text) {
 var _consultMsg = '';
 var BOT_USERNAME = 'onda_lawyer_bot';
 
-// 클립보드 복사 (동기 방식 — 텔레그램 WebView 호환)
-function copyToClip(text) {
+// 클립보드 복사 (최신 API 우선, execCommand fallback)
+function copyToClip(text, callback) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() {
+      if (callback) callback(true);
+    }).catch(function() {
+      execCopyFallback(text);
+      if (callback) callback(true);
+    });
+  } else {
+    execCopyFallback(text);
+    if (callback) callback(true);
+  }
+}
+function execCopyFallback(text) {
   var ta = document.createElement('textarea');
   ta.value = text;
   ta.style.position = 'fixed';
@@ -208,13 +221,14 @@ function sendToBot(message) {
     tg.sendData(message);
     return;
   }
-  copyToClip(message);
-  if (tg) {
-    showToast('📋 복사 완료! 채팅에 붙여넣기 하세요');
-    setTimeout(function() { tg.close(); }, 1500);
-  } else {
-    alert('📋 클립보드에 복사되었습니다!\n텔레그램 봇 채팅에 붙여넣기 하세요.');
-  }
+  copyToClip(message, function() {
+    if (tg) {
+      showToast('📋 복사 완료! 채팅에 붙여넣기 하세요');
+      setTimeout(function() { tg.close(); }, 1500);
+    } else {
+      alert('📋 클립보드에 복사되었습니다!\n텔레그램 봇 채팅에 붙여넣기 하세요.');
+    }
+  });
 }
 
 var _consultCode = '';
