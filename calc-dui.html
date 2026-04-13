@@ -190,8 +190,9 @@ function calcDUI() {
     + '━━━━━━━━━━━━━━\n'
     + '대응 방법을 알려주세요.';
 
+  var startCode = 'cd_' + (isRefusal ? 'ref' : Math.round(bac * 1000)) + '_' + count + '_' + (hasAccident ? '1' : '0');
   document.getElementById('dui-result').innerHTML =
-    resultBox(rows, '* 실제 양형은 법원의 재량에 따라 달라집니다. 참고용으로만 활용하세요.', '도로교통법 제148조의2, 특정범죄가중처벌법 제5조의11') + explanationBox(explainText) + tips + consultButton(consultMsg);
+    resultBox(rows, '* 실제 양형은 법원의 재량에 따라 달라집니다. 참고용으로만 활용하세요.', '도로교통법 제148조의2, 특정범죄가중처벌법 제5조의11') + explanationBox(explainText) + tips + consultButton(consultMsg, startCode);
 }
 </script>
 </body>

@@ -192,8 +192,9 @@ function calcLegalShare() {
     + '━━━━━━━━━━━━━━\n'
     + '상속 분할/유류분 관련 상담 부탁드립니다.';
 
+  var startCode = 'cls_' + estate + '_' + (spouseAlive ? '1' : '0') + '_' + numChildren;
   document.getElementById('ls-result').innerHTML =
-    resultBox(rows, '* 채무, 기여분, 특별수익 등에 따라 실제 분할 금액은 달라질 수 있습니다.', '민법 제1009조, 제1112조') + explanationBox(explainText) + tips + consultButton(consultMsg);
+    resultBox(rows, '* 채무, 기여분, 특별수익 등에 따라 실제 분할 금액은 달라질 수 있습니다.', '민법 제1009조, 제1112조') + explanationBox(explainText) + tips + consultButton(consultMsg, startCode);
 }
 </script>
 </body>

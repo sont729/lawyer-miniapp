@@ -158,8 +158,9 @@ function calcBroker() {
     tips = tipBox('<strong>주거용 오피스텔 요율 적용 조건:</strong> 전용면적 85㎡ 이하, 전용 부엌·화장실·목욕시설을 갖춘 경우에 해당합니다. 조건 미충족 시 상가/토지 요율(0.9%)이 적용될 수 있습니다.');
   }
 
+  var startCode = 'cb_' + deal + '_' + propType + '_' + baseAmount;
   document.getElementById('bk-result').innerHTML =
-    resultBox(rows, '* 공인중개사법 시행규칙 기준 상한요율입니다. 실제 수수료는 협의 가능합니다.', '2021년 개정 기준 (공인중개사법 시행규칙)') + explanationBox(explainText) + tips + consultButton(consultMsg);
+    resultBox(rows, '* 공인중개사법 시행규칙 기준 상한요율입니다. 실제 수수료는 협의 가능합니다.', '2021년 개정 기준 (공인중개사법 시행규칙)') + explanationBox(explainText) + tips + consultButton(consultMsg, startCode);
 }
 </script>
 </body>

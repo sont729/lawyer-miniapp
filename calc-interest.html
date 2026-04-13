@@ -152,8 +152,9 @@ function calcInterest() {
     + '━━━━━━━━━━━━━━\n'
     + '소장 작성이나 채권 추심 방법을 알려주세요.';
 
+  var startCode = 'ci2_' + principal + '_' + intType + (hasServed ? '_s' : '');
   document.getElementById('int-result').innerHTML =
-    resultBox(rows, '* 약정이율이 있는 경우 약정이율이 우선 적용됩니다. 복리가 아닌 단리 계산입니다.', '민법 제379조, 소송촉진 등에 관한 특례법 제3조') + explanationBox(explainText) + tips + consultButton(consultMsg);
+    resultBox(rows, '* 약정이율이 있는 경우 약정이율이 우선 적용됩니다. 복리가 아닌 단리 계산입니다.', '민법 제379조, 소송촉진 등에 관한 특례법 제3조') + explanationBox(explainText) + tips + consultButton(consultMsg, startCode);
 }
 </script>
 </body>
